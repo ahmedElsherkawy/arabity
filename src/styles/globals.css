@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+
+body {
+  font-family: 'Inter', 'Cairo', sans-serif;
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+[dir="rtl"] body,
+[dir="rtl"] {
+  font-family: 'Cairo', 'Inter', sans-serif;
+}

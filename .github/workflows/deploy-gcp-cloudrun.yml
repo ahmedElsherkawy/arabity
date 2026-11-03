@@ -1,0 +1,39 @@
+name: Deploy Arabety to GCP Cloud Run (dev branch)
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+env:
+  SERVICE_NAME: arabety-marketplace-dev
+  REGION: europe-west1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Repository (dev branch)
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Deploy from Source to Google Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        id: deploy
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          source: ./
+          flags: "--allow-unauthenticated --port=8080"
+
+      - name: Print Live Cloud Run URL
+        run: echo "🚗 Arabety Live URL -> ${{ steps.deploy.outputs.url }}"

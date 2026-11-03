@@ -1,0 +1,7 @@
+OE_NUMBER,PART_NAME_EN,PART_NAME_AR,PART_TYPE,CONDITION,BRAND,ORIGIN,PRICE_EGP,STOCK_QTY,WARRANTY_DAYS,STORE_PICKUP,COMPATIBLE_CAR
+17801-21060,Engine Air Filter Element,فلتر هواء محرك أصلي,MECHANICAL_ENGINE,OEM_NEW,Toyota Genuine,Japan,680,25,30,YES,2022 Toyota Corolla 1.6L
+43420-02E80,Front Left CV Axle Drive Shaft,كوبلن أمامي شمال كامل,TRANSMISSION_DRIVETRAIN,OES_FIRST_LINE,GKN / Spidan,Germany,3450,6,180,YES,2022 Toyota Corolla 1.6L
+27060-0T260,Alternator 12V 120A Assembly,دينامو شحن كهرباء 120 أمبير,ELECTRICAL_SENSORS,USED_IMPORTED,Denso OEM Imported (Grade A),Japan Import,4200,4,21,YES,2022 Toyota Corolla 1.6L
+52119-0X942,Front Bumper Cover Unpainted,إكصدام أمامي فيبر,BODY_EXTERIOR,AFTERMARKET_COMMERCIAL,Tong Yang Taiwan,Taiwan,2150,10,30,YES,2022 Toyota Corolla 1.6L
+08880-83889,Synthetic Engine Oil 5W-30 (4L),زيت محرك تخليقي 5W-30 (4 لتر),OILS_CONSUMABLES,OEM_NEW,Toyota Genuine Oil,UAE,1390,40,365,YES,All Vehicles
+88310-02K40,A/C Compressor Complete with Clutch,كباس تكييف كامل بالكلتش,COOLING_AC,REMANUFACTURED,Denso Remanufactured,Japan,6900,3,90,YES,2022 Toyota Corolla 1.6L

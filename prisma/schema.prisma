@@ -1,0 +1,323 @@
+// Arabety (عربيتي) - Multi-Vendor Automotive Spare Parts & Service Marketplace
+// Production Database Schema (PostgreSQL + Prisma ORM)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  TRADER
+  WORKSHOP
+  ADMIN
+}
+
+enum PartCategoryType {
+  MECHANICAL_ENGINE       // أجزاء المحرك والميكانيكا
+  BRAKES_SUSPENSION       // الفرامل والعفشة والدركسيون
+  BODY_EXTERIOR           // صاج وهيكل وإكصدامات وفوانيس
+  ELECTRICAL_SENSORS      // كهرباء وحساسات وكنترول
+  COOLING_AC              // التبريد والتكييف
+  TRANSMISSION_DRIVETRAIN // الفتيس والدبرياج والكبالن
+  OILS_CONSUMABLES        // زيوت وسوائل وصيانات دورية
+}
+
+enum PartCondition {
+  OEM_NEW                 // أصلي وكالة جديد
+  OES_FIRST_LINE          // أصلي مصنع (بوش، دينسو، كايايبا)
+  AFTERMARKET_COMMERCIAL  // بديل تجاري (تايواني / كوري / صيني)
+  USED_IMPORTED           // استيراد الخارج مفحوص
+  REMANUFACTURED          // مجدد بالضمان
+}
+
+enum FulfillmentType {
+  STORE_PICKUP            // استلام مباشر من محل التاجر (Click & Collect)
+  HOME_DELIVERY           // توصيل للمنزل
+  SHIP_TO_WORKSHOP        // شحن مباشر لمركز الصيانة مع التركيب
+}
+
+enum RFQStatus {
+  OPEN
+  QUOTED
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+enum OrderStatus {
+  PENDING
+  READY_FOR_STORE_PICKUP
+  PICKED_UP_FROM_STORE
+  SHIPPED_TO_CUSTOMER
+  SHIPPED_TO_WORKSHOP
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  RETURNED
+}
+
+model User {
+  id            String           @id @default(cuid())
+  name          String
+  phone         String           @unique
+  email         String?          @unique
+  passwordHash  String?
+  role          UserRole         @default(CUSTOMER)
+  locale        String           @default("ar") // "ar" | "en"
+  garage        GarageVehicle[]
+  traderProfile TraderProfile?
+  workshop      WorkshopProfile?
+  orders        Order[]
+  rfqRequests   PartRequestRFQ[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model VehicleTrim {
+  id          String          @id @default(cuid())
+  make        String
+  model       String
+  yearStart   Int
+  yearEnd     Int
+  engineCode  String
+  bodyType    String
+  fitments    PartFitment[]
+  userGarages GarageVehicle[]
+
+  @@index([make, model, yearStart, yearEnd])
+}
+
+model GarageVehicle {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleTrimId String
+  vehicleTrim   VehicleTrim @relation(fields: [vehicleTrimId], references: [id])
+  year          Int
+  vin           String?
+  nickname      String?
+  isDefault     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+}
+
+model MasterPart {
+  id              String           @id @default(cuid())
+  oeNumber        String           @unique
+  crossRefNumbers String[]
+  nameEn          String
+  nameAr          String
+  descriptionEn   String?
+  descriptionAr   String?
+  categoryType    PartCategoryType
+  subCategory     String           // e.g., Brake Pads, Headlights, Alternators, Engine Oil
+  brand           String
+  originCountry   String
+  images          String[]
+  specifications  Json?
+  fitments        PartFitment[]
+  offers          TraderOffer[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([categoryType, brand])
+}
+
+model PartFitment {
+  id            String      @id @default(cuid())
+  partId        String
+  part          MasterPart  @relation(fields: [partId], references: [id], onDelete: Cascade)
+  vehicleTrimId String
+  vehicleTrim   VehicleTrim @relation(fields: [vehicleTrimId], references: [id], onDelete: Cascade)
+  notes         String?
+
+  @@unique([partId, vehicleTrimId])
+}
+
+model TraderProfile {
+  id               String           @id @default(cuid())
+  userId           String           @unique
+  user             User             @relation(fields: [userId], references: [id])
+  storeNameEn      String
+  storeNameAr      String
+  commercialRegNo  String
+  taxCardNo        String
+  isVerified       Boolean          @default(false)
+  rating           Float            @default(5.0)
+  reviewCount      Int              @default(0)
+  specializedMakes String[]
+  city             String
+  district         String
+  storeAddress     String           // Displayed when customer chooses Store Pickup
+  openingHours     String           @default("10:00 AM - 10:00 PM")
+  allowStorePickup Boolean          @default(true)
+  commissionRate   Float            @default(0.10)
+  offers           TraderOffer[]
+  csvImports       CsvImportBatch[]
+  rfqQuotes        RFQQuote[]
+  subOrders        SubOrder[]
+  createdAt        DateTime         @default(now())
+}
+
+model TraderOffer {
+  id               String        @id @default(cuid())
+  partId           String
+  part             MasterPart    @relation(fields: [partId], references: [id], onDelete: Cascade)
+  traderId         String
+  trader           TraderProfile @relation(fields: [traderId], references: [id], onDelete: Cascade)
+  sku              String
+  condition        PartCondition
+  conditionGrade   String?
+  brandOverride    String?
+  originOverride   String?
+  price            Decimal       @db.Decimal(10, 2)
+  compareAtPrice   Decimal?      @db.Decimal(10, 2)
+  stockQty         Int           @default(1)
+  warrantyDays     Int           @default(30)
+  allowStorePickup Boolean       @default(true)
+  pickupReadyMins  Int           @default(30) // e.g., Ready for store pickup in 30 mins
+  shipHours        Int           @default(24)
+  realPhotos       String[]
+  isActive         Boolean       @default(true)
+  orderItems       OrderItem[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([partId, price, condition])
+}
+
+model CsvImportBatch {
+  id            String        @id @default(cuid())
+  traderId      String
+  trader        TraderProfile @relation(fields: [traderId], references: [id], onDelete: Cascade)
+  fileName      String
+  totalRows     Int
+  verifiedRows  Int
+  rejectedRows  Int
+  status        String        // PENDING_CONFIRMATION | CONFIRMED_AUTO_ADDED | CANCELLED
+  parsedPreview Json          // Validated rows shown to trader before clicking "Yes, Auto-Add"
+  createdAt     DateTime      @default(now())
+  confirmedAt   DateTime?
+}
+
+model PartRequestRFQ {
+  id                 String           @id @default(cuid())
+  customerId         String
+  customer           User             @relation(fields: [customerId], references: [id])
+  make               String
+  model              String
+  year               Int
+  vin                String?
+  partCategory       PartCategoryType
+  partName           String
+  oemNumber          String?
+  notes              String?
+  preferredCondition PartCondition[]
+  photos             String[]
+  status             RFQStatus        @default(OPEN)
+  quotes             RFQQuote[]
+  createdAt          DateTime         @default(now())
+}
+
+model RFQQuote {
+  id               String         @id @default(cuid())
+  rfqId            String
+  rfq              PartRequestRFQ @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  traderId         String
+  trader           TraderProfile  @relation(fields: [traderId], references: [id])
+  condition        PartCondition
+  brand            String
+  origin           String
+  price            Decimal        @db.Decimal(10, 2)
+  warrantyDays     Int            @default(14)
+  deliveryDays     Int            @default(1)
+  allowStorePickup Boolean        @default(true)
+  notes            String?
+  photos           String[]
+  isAccepted       Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+}
+
+model WorkshopProfile {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id])
+  nameEn          String
+  nameAr          String
+  city            String
+  district        String
+  address         String
+  specialties     String[]
+  supportedMakes  String[]
+  rating          Float            @default(4.8)
+  reviewCount     Int              @default(0)
+  isVerified      Boolean          @default(true)
+  servicesPricing Json
+  bookings        ServiceBooking[]
+  createdAt       DateTime         @default(now())
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  orderNumber     String          @unique
+  customerId      String
+  customer        User            @relation(fields: [customerId], references: [id])
+  subtotal        Decimal         @db.Decimal(10, 2)
+  shippingFee     Decimal         @db.Decimal(10, 2)
+  installationFee Decimal         @db.Decimal(10, 2) @default(0)
+  totalAmount     Decimal         @db.Decimal(10, 2)
+  paymentMethod   String          // CARD, WALLET, COD, PAY_AT_STORE
+  fulfillmentType FulfillmentType // STORE_PICKUP | HOME_DELIVERY | SHIP_TO_WORKSHOP
+  pickupCode      String?         // 6-digit code / QR for In-Store Pickup verification
+  shippingAddress String?
+  status          OrderStatus     @default(PENDING)
+  subOrders       SubOrder[]
+  serviceBooking  ServiceBooking?
+  createdAt       DateTime        @default(now())
+}
+
+model SubOrder {
+  id              String        @id @default(cuid())
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  traderId        String
+  trader          TraderProfile @relation(fields: [traderId], references: [id])
+  subtotal        Decimal       @db.Decimal(10, 2)
+  platformFee     Decimal       @db.Decimal(10, 2)
+  traderNetPayout Decimal       @db.Decimal(10, 2)
+  trackingNumber  String?
+  pickupStoreAddr String?
+  status          OrderStatus   @default(PENDING)
+  items           OrderItem[]
+  createdAt       DateTime      @default(now())
+}
+
+model OrderItem {
+  id            String      @id @default(cuid())
+  subOrderId    String
+  subOrder      SubOrder    @relation(fields: [subOrderId], references: [id], onDelete: Cascade)
+  traderOfferId String
+  traderOffer   TraderOffer @relation(fields: [traderOfferId], references: [id])
+  quantity      Int
+  unitPrice     Decimal     @db.Decimal(10, 2)
+}
+
+model ServiceBooking {
+  id            String          @id @default(cuid())
+  workshopId    String
+  workshop      WorkshopProfile @relation(fields: [workshopId], references: [id])
+  orderId       String?         @unique
+  order         Order?          @relation(fields: [orderId], references: [id])
+  customerName  String
+  customerPhone String
+  vehicleInfo   String
+  serviceType   String
+  laborFee      Decimal         @db.Decimal(10, 2)
+  scheduledDate DateTime
+  status        String          @default("CONFIRMED")
+  createdAt     DateTime        @default(now())
+}

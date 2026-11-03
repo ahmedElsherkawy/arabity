@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arabety (عربيتي) — Interactive UI/UX Prototype</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 md:p-6">
+
+  <!-- Top Prototype Controller Bar -->
+  <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 mb-5 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-orange-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          ع
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-lg text-[var(--foreground)]">Arabety | عربيتي</h1>
+            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-orange-500/15 text-orange-500 border border-orange-500/30">
+              v2.0 • Store Pickup + CSV Auto-Stock + 7 Part Types
+            </span>
+          </div>
+          <p class="text-xs text-[var(--muted-foreground)]" id="brand-subtitle">
+            Multi-Trader Car Spare Parts Marketplace • Direct Store Pickup • Smart CSV Stock Verification
+          </p>
+        </div>
+      </div>
+
+      <!-- Global Controls -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <div class="inline-flex rounded-xl border border-[var(--border)] p-1 bg-[var(--background)]">
+          <button onclick="setDeviceMode('desktop')" id="btn-device-desktop" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-600 text-white transition">
+            💻 Web UI
+          </button>
+          <button onclick="setDeviceMode('mobile')" id="btn-device-mobile" class="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition">
+            📱 Mobile App UI
+          </button>
+        </div>
+
+        <button onclick="toggleLocale()" class="px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-orange-500 text-xs font-semibold transition flex items-center gap-1.5">
+          <span>🌐</span>
+          <span id="locale-label">العربية (RTL)</span>
+        </button>
+
+        <button onclick="toggleCartModal(true)" class="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold transition flex items-center gap-2 shadow-sm">
+          <span>🛒</span>
+          <span id="cart-btn-label">Cart & Pickup / Delivery</span>
+          <span id="cart-count" class="px-2 py-0.5 rounded-full bg-white text-orange-700 font-bold text-xs">2</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Role / Screen Navigation Tabs -->
+    <div class="mt-4 pt-3 border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap gap-1.5" id="nav-tabs"></div>
+      <div class="text-xs text-[var(--muted-foreground)] flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+        <span id="active-user-story-hint"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Viewport Container -->
+  <div id="viewport-wrapper" class="transition-all duration-300">
+    <div id="mobile-header-bar" class="hidden bg-[var(--card)] border-b border-[var(--border)] px-5 py-2.5 rounded-t-3xl flex items-center justify-between text-xs font-semibold">
+      <span>9:41</span>
+      <span class="px-3 py-1 rounded-full bg-[var(--background)] border border-[var(--border)] text-xs">Arabety iOS / Android</span>
+      <span>5G 🔋</span>
+    </div>
+
+    <div id="screen-container" class="space-y-5"></div>
+
+    <div id="mobile-bottom-nav" class="hidden bg-[var(--card)] border-t border-[var(--border)] px-3 py-2.5 rounded-b-3xl grid grid-cols-4 gap-1 text-center mt-4">
+      <button onclick="setActiveTab('storefront')" class="p-1.5 rounded-xl text-xs font-medium hover:bg-[var(--background)]">
+        <div>🏠</div>
+        <div>Shop</div>
+      </button>
+      <button onclick="setActiveTab('trader-stock')" class="p-1.5 rounded-xl text-xs font-medium hover:bg-[var(--background)]">
+        <div>📄</div>
+        <div>Add Stock</div>
+      </button>
+      <button onclick="setActiveTab('rfq')" class="p-1.5 rounded-xl text-xs font-medium hover:bg-[var(--background)]">
+        <div>📸</div>
+        <div>RFQ</div>
+      </button>
+      <button onclick="setActiveTab('workshops')" class="p-1.5 rounded-xl text-xs font-medium hover:bg-[var(--background)]">
+        <div>🔧</div>
+        <div>Workshops</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 1: Multi-Trader Offer Comparison Drawer -->
+  <div id="offers-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl max-w-2xl w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-start justify-between gap-4 pb-3 border-b border-[var(--border)]">
+        <div>
+          <span class="text-xs font-semibold text-orange-500 uppercase" id="modal-part-oe"></span>
+          <h3 class="text-base font-bold text-[var(--foreground)] mt-0.5" id="modal-part-title"></h3>
+        </div>
+        <button onclick="closeOffersModal()" class="px-2.5 py-1 rounded-lg border border-[var(--border)] text-xs font-semibold hover:bg-[var(--background)]">✕</button>
+      </div>
+      <div id="modal-offers-list" class="space-y-3 mt-4"></div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Cart, In-Store Pickup, Home Delivery & Workshop Checkout -->
+  <div id="cart-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl max-w-2xl w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+        <h3 class="text-base font-bold text-[var(--foreground)]" id="cart-modal-title"></h3>
+        <button onclick="toggleCartModal(false)" class="px-2.5 py-1 rounded-lg border border-[var(--border)] text-xs font-semibold hover:bg-[var(--background)]">✕</button>
+      </div>
+      <div id="cart-modal-body" class="mt-4 space-y-4"></div>
+    </div>
+  </div>
+
+  <script>
+    const PART_TYPES = [
+      { id: 'ALL', icon: '🔍', en: 'All Part Types', ar: 'كل أنواع قطع الغيار' },
+      { id: 'MECHANICAL_ENGINE', icon: '⚙️', en: 'Engine & Mechanical', ar: 'المحرك والميكانيكا' },
+      { id: 'BRAKES_SUSPENSION', icon: '🛞', en: 'Brakes, Suspension & Steering', ar: 'الفرامل والعفشة والدركسيون' },
+      { id: 'BODY_EXTERIOR', icon: '🚘', en: 'Body Panels, Bumpers & Lights', ar: 'الصاج والإكصدامات والفوانيس' },
+      { id: 'ELECTRICAL_SENSORS', icon: '⚡', en: 'Electrical, Sensors & ECUs', ar: 'الكهرباء والحساسات والكنترول' },
+      { id: 'COOLING_AC', icon: '❄️', en: 'Cooling & Air Conditioning', ar: 'التبريد والتكييف' },
+      { id: 'TRANSMISSION_DRIVETRAIN', icon: '🔩', en: 'Transmission, Clutch & CV Joints', ar: 'الفتيس والدبرياج والكبالن' },
+      { id: 'OILS_CONSUMABLES', icon: '🛢️', en: 'Oils, Fluids & Maintenance Kits', ar: 'الزيوت والسوائل والصيانات' }
+    ];
+
+    const PART_CONDITIONS = [
+      { id: 'ALL', en: 'All Conditions', ar: 'كل الحالات والدرجات' },
+      { id: 'OEM_NEW', en: '✓ Genuine OEM (Agency)', ar: '✓ أصلي وكالة (جديد)' },
+      { id: 'OES_FIRST_LINE', en: '★ First-Line OES (Bosch/Denso/KYB)', ar: '★ أصلي مصنع (بوش / دينسو / KYB)' },
+      { id: 'AFTERMARKET_COMMERCIAL', en: '◆ Commercial Aftermarket', ar: '◆ بديل تجاري (تايواني / كوري)' },
+      { id: 'USED_IMPORTED', en: '♻ Used Imported (Estirad)', ar: '♻ استيراد الخارج مفحوص' },
+      { id: 'REMANUFACTURED', en: '🛠️ Remanufactured / Rebuilt', ar: '🛠️ مجدد بالضمان' }
+    ];
+
+    const SAMPLE_CSV_TEXT = `OE_NUMBER,PART_NAME_EN,PART_NAME_AR,PART_TYPE,CONDITION,BRAND,ORIGIN,PRICE_EGP,STOCK_QTY,WARRANTY_DAYS,STORE_PICKUP
+17801-21060,Engine Air Filter Element,فلتر هواء محرك أصلي,MECHANICAL_ENGINE,OEM_NEW,Toyota Genuine,Japan,680,25,30,YES
+43420-02E80,Front Left CV Axle Drive Shaft,كوبلن أمامي شمال كامل,TRANSMISSION_DRIVETRAIN,OES_FIRST_LINE,GKN Spidan,Germany,3450,6,180,YES
+27060-0T260,Alternator 12V 120A Assembly,دينامو شحن كهرباء 120 أمبير,ELECTRICAL_SENSORS,USED_IMPORTED,Denso OEM Imported Grade A,Japan Import,4200,4,21,YES
+52119-0X942,Front Bumper Cover Unpainted,إكصدام أمامي فيبر,BODY_EXTERIOR,AFTERMARKET_COMMERCIAL,Tong Yang Certified,Taiwan,2150,10,30,YES
+08880-83889,Synthetic Engine Oil 5W-30 (4L),زيت محرك تخليقي 5W-30 (4 لتر),OILS_CONSUMABLES,OEM_NEW,Toyota Genuine Oil,UAE,1390,40,365,YES
+88310-02K40,A/C Compressor with Clutch,كباس تكييف كامل بالكلتش,COOLING_AC,REMANUFACTURED,Denso Rebuilt,Japan,6900,3,90,YES
+ERR-00000,Invalid Row Missing Price Demo,قطعة تجريبية بدون سعر لاختبار الفحص,MECHANICAL_ENGINE,OEM_NEW,TestBrand,Japan,0,5,30,YES`;
+
+    const state = {
+      locale: 'en',
+      deviceMode: 'desktop',
+      activeTab: 'storefront', // 'storefront' | 'trader-stock' | 'rfq' | 'workshops' | 'admin'
+      selectedVehicleId: 'v-corolla-22',
+      partTypeFilter: 'ALL',
+      conditionFilter: 'ALL',
+      onlyStorePickup: false,
+      searchQuery: '',
+      deliveryMode: 'STORE_PICKUP', // 'STORE_PICKUP' | 'HOME' | 'WORKSHOP'
+      selectedWorkshopId: 'ws-1',
+      orderSuccessData: null,
+
+      // CSV Upload & Verification State
+      csvRawText: SAMPLE_CSV_TEXT,
+      csvVerifiedRows: [],
+      csvHasParsed: false,
+      csvAutoAddSuccessBanner: null,
+
+      cart: [
+        {
+          partId: 'p-1',
+          partNameEn: 'Front Ceramic Brake Pads Set',
+          partNameAr: 'طقم تيل فرامل أمامي سيراميك',
+          oeNumber: '04465-02420',
+          traderNameEn: 'El-Tawfikia Auto Parts',
+          traderNameAr: 'التوفيقية لقطع غيار السيارات',
+          storeAddressEn: 'Downtown Cairo — 14 Orabi St, El-Tawfikia',
+          storeAddressAr: 'وسط البلد — 14 شارع عرابي، التوفيقية',
+          allowStorePickup: true,
+          pickupReadyMins: 30,
+          condition: 'OEM_NEW',
+          brand: 'Toyota Genuine',
+          price: 2650,
+          qty: 1
+        }
+      ],
+      vehicles: [
+        { id: 'ALL', nameEn: 'All Vehicles (No Garage Filter)', nameAr: 'كل السيارات (بدون فلتر جراج)', vin: '' },
+        { id: 'v-corolla-22', nameEn: '2022 Toyota Corolla 1.6L (E210)', nameAr: 'تويوتا كورولا 2022 (1600 سي سي)', vin: 'JTDBR32E800192831' },
+        { id: 'v-elantra-23', nameEn: '2023 Hyundai Elantra CN7 1.6L', nameAr: 'هيونداي إلنترا CN7 2023', vin: 'KMHLN4AJ5MU109482' },
+        { id: 'v-sportage-24', nameEn: '2024 Kia Sportage NQ5 1.6T', nameAr: 'كيا سبورتاج NQ5 2024 تربو', vin: 'KNDPM3AC9N7004821' },
+        { id: 'v-bmw-320', nameEn: '2021 BMW 320i (G20) 2.0T', nameAr: 'بي إم دبليو 320i G20 2021', vin: 'WBA5R1C50KAK92810' }
+      ],
+      parts: [
+        {
+          id: 'p-1',
+          oeNumber: '04465-02420',
+          nameEn: 'Front Ceramic Brake Pads Set',
+          nameAr: 'طقم تيل فرامل أمامي سيراميك',
+          partType: 'BRAKES_SUSPENSION',
+          compatibleVehicles: ['v-corolla-22'],
+          isFromCsv: false,
+          offers: [
+            {
+              id: 'o-1',
+              traderEn: 'El-Tawfikia Auto Parts',
+              traderAr: 'التوفيقية لقطع غيار السيارات',
+              storeAddressEn: 'Downtown Cairo — 14 Orabi St, El-Tawfikia',
+              storeAddressAr: 'وسط البلد — 14 شارع عرابي، التوفيقية',
+              allowStorePickup: true,
+              pickupReadyMins: 30,
+              rating: 4.9,
+              condition: 'OEM_NEW',
+              brandEn: 'Toyota Genuine',
+              brandAr: 'تويوتا أصلي وكالة',
+              originEn: 'Japan',
+              originAr: 'اليابان',
+              price: 2650,
+              stock: 12,
+              warrantyDays: 90,
+              shipHours: 12
+            },
+            {
+              id: 'o-2',
+              traderEn: 'Al-Alamiya Japan Parts',
+              traderAr: 'العالمية لقطع الغيار الياباني',
+              storeAddressEn: 'Giza — 28 Gameat El-Dowal, Mohandessin',
+              storeAddressAr: 'الجيزة — 28 جامعة الدول، المهندسين',
+              allowStorePickup: true,
+              pickupReadyMins: 45,
+              rating: 4.8,
+              condition: 'OES_FIRST_LINE',
+              brandEn: 'Brembo Ceramic First-Line',
+              brandAr: 'بريمبو سيراميك أصلي مصنع',
+              originEn: 'Italy',
+              originAr: 'إيطاليا',
+              price: 1850,
+              stock: 20,
+              warrantyDays: 60,
+              shipHours: 24
+            },
+            {
+              id: 'o-3',
+              traderEn: 'El-Harfyeen Import Hub',
+              traderAr: 'مركز الحرفيين للاستيراد',
+              storeAddressEn: 'Cairo — El-Harfyeen City, Block 8, Shop 12',
+              storeAddressAr: 'القاهرة — مدينة الحرفيين، بلوك 8، محل 12',
+              allowStorePickup: true,
+              pickupReadyMins: 20,
+              rating: 4.6,
+              condition: 'USED_IMPORTED',
+              brandEn: 'OEM Imported (Grade A 90%)',
+              brandAr: 'استيراد أصلي بحالة الزيرو',
+              originEn: 'Japan Import',
+              originAr: 'استيراد اليابان',
+              price: 1150,
+              stock: 4,
+              warrantyDays: 14,
+              shipHours: 24
+            }
+          ]
+        },
+        {
+          id: 'p-2',
+          oeNumber: '48510-8Z295',
+          nameEn: 'Front Gas Shock Absorbers Pair (R+L)',
+          nameAr: 'طقم مساعدين أمامي غاز (يمين + يسار)',
+          partType: 'BRAKES_SUSPENSION',
+          compatibleVehicles: ['v-corolla-22', 'v-elantra-23'],
+          isFromCsv: false,
+          offers: [
+            {
+              id: 'o-4',
+              traderEn: 'Al-Alamiya Japan Parts',
+              traderAr: 'العالمية لقطع الغيار الياباني',
+              storeAddressEn: 'Giza — 28 Gameat El-Dowal, Mohandessin',
+              storeAddressAr: 'الجيزة — 28 جامعة الدول، المهندسين',
+              allowStorePickup: true,
+              pickupReadyMins: 30,
+              rating: 4.8,
+              condition: 'OES_FIRST_LINE',
+              brandEn: 'KYB Excel-G OES',
+              brandAr: 'كايايبا KYB ياباني أصلي مصنع',
+              originEn: 'Japan',
+              originAr: 'اليابان',
+              price: 5400,
+              stock: 8,
+              warrantyDays: 180,
+              shipHours: 24
+            },
+            {
+              id: 'o-6',
+              traderEn: 'El-Harfyeen Import Hub',
+              traderAr: 'مركز الحرفيين للاستيراد',
+              storeAddressEn: 'Cairo — El-Harfyeen City, Block 8, Shop 12',
+              storeAddressAr: 'القاهرة — مدينة الحرفيين، بلوك 8، محل 12',
+              allowStorePickup: true,
+              pickupReadyMins: 25,
+              rating: 4.6,
+              condition: 'USED_IMPORTED',
+              brandEn: 'Imported Strut + Spring Assembly',
+              brandAr: 'مساعد كامل بالياي والبطاحة استيراد',
+              originEn: 'Japan Import',
+              originAr: 'استيراد اليابان',
+              price: 3600,
+              stock: 6,
+              warrantyDays: 21,
+              shipHours: 24
+            }
+          ]
+        },
+        {
+          id: 'p-4',
+          oeNumber: '90919-01275',
+          nameEn: 'Iridium Laser Spark Plugs (Set of 4)',
+          nameAr: 'طقم بوجيهات إيريديوم ليزر (4 شمعة)',
+          partType: 'MECHANICAL_ENGINE',
+          compatibleVehicles: ['v-corolla-22', 'v-elantra-23', 'v-sportage-24'],
+          isFromCsv: false,
+          offers: [
+            {
+              id: 'o-9',
+              traderEn: 'El-Tawfikia Auto Parts',
+              traderAr: 'التوفيقية لقطع غيار السيارات',
+              storeAddressEn: 'Downtown Cairo — 14 Orabi St, El-Tawfikia',
+              storeAddressAr: 'وسط البلد — 14 شارع عرابي، التوفيقية',
+              allowStorePickup: true,
+              pickupReadyMins: 15,
+              rating: 4.9,
+              condition: 'OEM_NEW',
+              brandEn: 'Denso Iridium TT',
+              brandAr: 'دينسو إيريديوم ياباني',
+              originEn: 'Japan',
+              originAr: 'اليابان',
+              price: 1950,
+              stock: 35,
+              warrantyDays: 90,
+              shipHours: 12
+            }
+          ]
+        },
+        {
+          id: 'p-5',
+          oeNumber: '63117466107',
+          nameEn: 'Adaptive Full LED Headlight Assembly (Right)',
+          nameAr: 'فانوس أمامي يمين ليد كامل (Full LED)',
+          partType: 'BODY_EXTERIOR',
+          compatibleVehicles: ['v-bmw-320', 'v-corolla-22'],
+          isFromCsv: false,
+          offers: [
+            {
+              id: 'o-11',
+              traderEn: 'El-Harfyeen Import Hub',
+              traderAr: 'مركز الحرفيين للاستيراد',
+              storeAddressEn: 'Cairo — El-Harfyeen City, Block 8, Shop 12',
+              storeAddressAr: 'القاهرة — مدينة الحرفيين، بلوك 8، محل 12',
+              allowStorePickup: true,
+              pickupReadyMins: 30,
+              rating: 4.7,
+              condition: 'USED_IMPORTED',
+              brandEn: 'OEM Imported (Grade A+ Intact Tabs)',
+              brandAr: 'أصلي استيراد فرز أول بقواعد المصنع',
+              originEn: 'Germany Import',
+              originAr: 'استيراد ألمانيا',
+              price: 11500,
+              stock: 3,
+              warrantyDays: 30,
+              shipHours: 24
+            },
+            {
+              id: 'o-12',
+              traderEn: 'El-Tawfikia Auto Parts',
+              traderAr: 'التوفيقية لقطع غيار السيارات',
+              storeAddressEn: 'Downtown Cairo — 14 Orabi St, El-Tawfikia',
+              storeAddressAr: 'وسط البلد — 14 شارع عرابي، التوفيقية',
+              allowStorePickup: true,
+              pickupReadyMins: 30,
+              rating: 4.9,
+              condition: 'AFTERMARKET_COMMERCIAL',
+              brandEn: 'TYC / Depo Certified',
+              brandAr: 'ديبو / TYC تايواني تجاري درجة أولى',
+              originEn: 'Taiwan',
+              originAr: 'تايوان',
+              price: 6800,
+              stock: 7,
+              warrantyDays: 90,
+              shipHours: 24
+            }
+          ]
+        }
+      ],
+      rfqs: [
+        {
+          id: 'RFQ-8841',
+          vehicleEn: '2022 Toyota Corolla 1.6L',
+          vehicleAr: 'تويوتا كورولا 2022 - 1600 سي سي',
+          vin: 'JTDBR32E800192831',
+          partNameEn: 'Electric Power Steering Rack (علبة دركسيون كهرباء)',
+          partNameAr: 'علبة دركسيون كهرباء كاملة (اسكترا)',
+          status: 'QUOTED',
+          quotes: [
+            { id: 'q-1', traderEn: 'El-Harfyeen Import Hub', traderAr: 'مركز الحرفيين للاستيراد', condition: 'USED_IMPORTED', brand: 'Toyota Original Import Grade A', price: 6800, warrantyDays: 30, notesEn: 'Available for immediate store pickup in El-Harfyeen or courier delivery.', notesAr: 'متاح للاستلام المباشر من محل الحرفيين أو الشحن السريع.' },
+            { id: 'q-2', traderEn: 'El-Tawfikia Auto Parts', traderAr: 'التوفيقية لقطع غيار السيارات', condition: 'OEM_NEW', brand: 'Toyota Genuine Boxed', price: 14900, warrantyDays: 180, notesEn: 'Brand new sealed Toyota OEM steering rack. Pickup ready in Downtown.', notesAr: 'قطعة أصلية وكالة جديدة بالكرتونة ومتاحة للاستلام من التوفيقية.' }
+          ]
+        }
+      ],
+      workshops: [
+        {
+          id: 'ws-1',
+          nameEn: 'ProTech Auto Service & Bosch Center',
+          nameAr: 'برو تيك لصيانة السيارات المعتمدة',
+          locationEn: 'New Cairo — 5th Settlement',
+          locationAr: 'القاهرة الجديدة — التجمع الخامس',
+          rating: 4.9,
+          reviews: 342,
+          specialtiesEn: ['Brakes & ABS', 'Suspension Alignment', 'Computer Diagnostics'],
+          specialtiesAr: ['الفرامل و ABS', 'ترصيص وعفشة', 'فحص بالكمبيوتر'],
+          installFee: 350
+        },
+        {
+          id: 'ws-2',
+          nameEn: 'Al-Mohandes Japan & Korea Specialist',
+          nameAr: 'المهندس جروب للياباني والكوري',
+          locationEn: 'Giza — 6th of October',
+          locationAr: 'الجيزة — 6 أكتوبر',
+          rating: 4.8,
+          reviews: 218,
+          specialtiesEn: ['Engine & Cooling', 'Suspension & Steering', 'Periodic Service'],
+          specialtiesAr: ['ميكانيكا وتبريد', 'العفشة والدركسيون', 'صيانات دورية'],
+          installFee: 300
+        }
+      ]
+    };
+
+    function t(en, ar) {
+      return state.locale === 'ar' ? ar : en;
+    }
+
+    function getPartTypeLabel(typeId) {
+      const found = PART_TYPES.find(pt => pt.id === typeId);
+      return found ? `${found.icon} ${t(found.en, found.ar)}` : typeId;
+    }
+
+    function conditionBadge(cond) {
+      if (cond === 'OEM_NEW') {
+        return `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">${t('✓ Genuine OEM (Agency)', '✓ أصلي وكالة (جديد)')}</span>`;
+      }
+      if (cond === 'OES_FIRST_LINE') {
+        return `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-500 border border-blue-500/30">${t('★ OES First-Line', '★ أصلي مصنع أول')}</span>`;
+      }
+      if (cond === 'AFTERMARKET_COMMERCIAL') {
+        return `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-500 border border-purple-500/30">${t('◆ Commercial Aftermarket', '◆ بديل تجاري')}</span>`;
+      }
+      if (cond === 'REMANUFACTURED') {
+        return `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-500 border border-cyan-500/30">${t('🛠️ Remanufactured', '🛠️ مجدد بالضمان')}</span>`;
+      }
+      return `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-500 border border-amber-500/30">${t('♻ Used Imported (Estirad)', '♻ استيراد مفحوص')}</span>`;
+    }
+
+    function toggleLocale() {
+      state.locale = state.locale === 'en' ? 'ar' : 'en';
+      document.documentElement.dir = state.locale === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = state.locale;
+      renderAll();
+    }
+
+    function setDeviceMode(mode) {
+      state.deviceMode = mode;
+      const wrapper = document.getElementById('viewport-wrapper');
+      const mHeader = document.getElementById('mobile-header-bar');
+      const mFooter = document.getElementById('mobile-bottom-nav');
+      const btnD = document.getElementById('btn-device-desktop');
+      const btnM = document.getElementById('btn-device-mobile');
+
+      if (mode === 'mobile') {
+        wrapper.className = 'max-w-[420px] mx-auto border-4 border-[var(--border)] rounded-3xl p-3 bg-[var(--background)] shadow-2xl transition-all duration-300';
+        mHeader.classList.remove('hidden');
+        mFooter.classList.remove('hidden');
+        btnM.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-600 text-white transition';
+        btnD.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition';
+      } else {
+        wrapper.className = 'transition-all duration-300';
+        mHeader.classList.add('hidden');
+        mFooter.classList.add('hidden');
+        btnD.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-600 text-white transition';
+        btnM.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition';
+      }
+      renderAll();
+    }
+
+    function setActiveTab(tab) {
+      state.activeTab = tab;
+      renderAll();
+    }
+
+    function renderNavTabs() {
+      const tabs = [
+        { id: 'storefront', label: t('1. Storefront, Part Types & Store Pickup', '1. المتجر وأنواع القطع والاستلام من المحل'), story: t('US-C01, US-C02 & US-C05: 7 Spare Part Types + Store Pickup + Buy Box', 'تصفح 7 أنواع قطع غيار + استلام مباشر من محل التاجر') },
+        { id: 'trader-stock', label: t('2. Trader Add Stock & CSV Auto-Verify', '2. صفحة التاجر: إضافة مخزون ورفع ملف CSV'), story: t('US-T01 & US-T02: Upload CSV -> Automated Verification -> Click Yes -> Auto-Added', 'رفع ملف CSV وفحصه تلقائياً وإضافته للمخزون بضغطة زر') },
+        { id: 'rfq', label: t('3. Request a Part (RFQ Quotes)', '3. طلب تسعير قطعة (RFQ)'), story: t('US-C03: Custom Part Request & Live Trader Bidding', 'طلب قطعة خاصة ومقارنة تسعيرات التجار') },
+        { id: 'workshops', label: t('4. Verified Workshops', '4. مراكز الصيانة المعتمدة'), story: t('US-C04: Ship-to-Workshop + Fixed Labor Rates', 'شحن القطعة لمركز الصيانة وحجز التركيب') },
+        { id: 'admin', label: t('5. Admin Control', '5. لوحة الإدارة'), story: t('US-A01: Trader KYC, Escrow & Commissions', 'توثيق التجار وإدارة العمولات والضمان') }
+      ];
+
+      const navContainer = document.getElementById('nav-tabs');
+      navContainer.innerHTML = tabs.map(tab => `
+        <button onclick="setActiveTab('${tab.id}')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
+          state.activeTab === tab.id
+            ? 'bg-orange-600 text-white shadow-sm'
+            : 'bg-[var(--background)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] border border-[var(--border)]'
+        }">
+          ${tab.label}
+        </button>
+      `).join('');
+
+      const activeObj = tabs.find(x => x.id === state.activeTab);
+      document.getElementById('active-user-story-hint').textContent = activeObj ? activeObj.story : '';
+      document.getElementById('locale-label').textContent = state.locale === 'en' ? 'العربية (RTL)' : 'English (LTR)';
+      document.getElementById('cart-btn-label').textContent = t('Cart & Pickup / Delivery', 'السلة والاستلام أو الشحن');
+      document.getElementById('cart-count').textContent = state.cart.reduce((s, i) => s + i.qty, 0);
+    }
+
+    function renderStorefront() {
+      const selectedCar = state.vehicles.find(v => v.id === state.selectedVehicleId) || state.vehicles[0];
+      const filteredParts = state.parts.filter(part => {
+        const matchesSearch = !state.searchQuery ||
+          part.nameEn.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
+          part.nameAr.includes(state.searchQuery) ||
+          part.oeNumber.toLowerCase().includes(state.searchQuery.toLowerCase());
+        const matchesType = state.partTypeFilter === 'ALL' || part.partType === state.partTypeFilter;
+        const matchesCondition = state.conditionFilter === 'ALL' || part.offers.some(o => o.condition === state.conditionFilter);
+        const matchesPickup = !state.onlyStorePickup || part.offers.some(o => o.allowStorePickup);
+        return matchesSearch && matchesType && matchesCondition && matchesPickup;
+      });
+
+      return `
+        <!-- Sticky My Garage + Store Pickup Filter Bar -->
+        <div class="bg-[var(--card)] border-2 border-orange-500/40 rounded-2xl p-4 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-orange-500/15 text-orange-500 flex items-center justify-center text-lg font-bold">🚗</div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-orange-500">${t('My Garage Active Vehicle', 'سيارتي المختارة في الجراج')}</span>
+                  ${state.selectedVehicleId !== 'ALL' ? `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500">VIN: ${selectedCar.vin}</span>` : ''}
+                </div>
+                <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+                  ${t('Choose your car, filter by Spare Part Type, and pick up directly from the trader shop or get delivery.', 'اختر سيارتك، حدد نوع قطعة الغيار، واستلمها مباشرة من محل التاجر أو بالشحن.')}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <select onchange="changeGarageVehicle(this.value)" class="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-semibold text-[var(--foreground)]">
+                ${state.vehicles.map(v => `
+                  <option value="${v.id}" ${v.id === state.selectedVehicleId ? 'selected' : ''}>
+                    ${t(v.nameEn, v.nameAr)}
+                  </option>
+                `).join('')}
+              </select>
+
+              <button onclick="toggleOnlyStorePickup()" class="px-3 py-2 rounded-xl text-xs font-bold border transition ${
+                state.onlyStorePickup
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-[var(--background)] text-[var(--foreground)] border-[var(--border)] hover:border-emerald-500'
+              }">
+                🏪 ${t('In-Store Pickup Available Only', 'متاح للاستلام المباشر من المحل فقط')}
+              </button>
+            </div>
+          </div>
+
+          <!-- 7 Spare Part System Types Selector -->
+          <div class="pt-3 border-t border-[var(--border)]">
+            <div class="text-xs font-bold text-[var(--muted-foreground)] mb-2">
+              ${t('Browse by Spare Part System Type (7 Categories):', 'تصفح حسب نوع وتصنيف قطعة الغيار (7 أقسام رئيسية):')}
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              ${PART_TYPES.map(pt => `
+                <button onclick="setPartTypeFilter('${pt.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
+                  state.partTypeFilter === pt.id
+                    ? 'bg-orange-600 text-white shadow-sm'
+                    : 'bg-[var(--background)] text-[var(--muted-foreground)] border border-[var(--border)] hover:text-[var(--foreground)]'
+                }">
+                  <span>${pt.icon}</span>
+                  <span>${t(pt.en, pt.ar)}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Search + 5 Condition Tier Filters -->
+          <div class="pt-3 border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+            <div class="flex-1 min-w-[220px]">
+              <input
+                type="text"
+                value="${state.searchQuery}"
+                oninput="updateSearch(this.value)"
+                placeholder="${t('Search by part name, OEM Number (04465-02420), or brand...', 'ابحث باسم القطعة أو الرقم الأصلي OE أو الماركة...')}"
+                class="w-full px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs text-[var(--foreground)]"
+              />
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              ${PART_CONDITIONS.map(c => `
+                <button onclick="setConditionFilter('${c.id}')" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold transition ${
+                  state.conditionFilter === c.id
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-[var(--background)] text-[var(--muted-foreground)] border border-[var(--border)] hover:text-[var(--foreground)]'
+                }">${t(c.en, c.ar)}</button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Catalog Grid -->
+        <div class="grid ${state.deviceMode === 'mobile' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-4">
+          ${filteredParts.map(part => {
+            const fits = state.selectedVehicleId === 'ALL' || part.compatibleVehicles.includes('ALL') || part.compatibleVehicles.includes(state.selectedVehicleId);
+            const matchingOffers = state.conditionFilter === 'ALL'
+              ? part.offers
+              : part.offers.filter(o => o.condition === state.conditionFilter);
+            const sortedOffers = [...matchingOffers].sort((a, b) => a.price - b.price);
+            const bestOffer = sortedOffers[0] || part.offers[0];
+
+            return `
+              <div class="bg-[var(--card)] border ${part.isFromCsv ? 'border-emerald-500/60' : 'border-[var(--border)]'} rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:border-orange-500/50 transition">
+                <div>
+                  <!-- Top Badges: OE, CSV Badge & Fitment -->
+                  <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2.5">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-xs font-mono font-semibold text-[var(--muted-foreground)] bg-[var(--background)] px-2.5 py-1 rounded-lg border border-[var(--border)]">
+                        OE: ${part.oeNumber}
+                      </span>
+                      ${part.isFromCsv ? `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500 text-white">${t('NEW CSV', 'مضاف من CSV')}</span>` : ''}
+                    </div>
+                    ${state.selectedVehicleId !== 'ALL' ? (
+                      fits
+                        ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">${t('✓ Fits Your Car', '✓ يركب لسيارتك')}</span>`
+                        : `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/15 text-red-500 border border-red-500/30">${t('✕ Does Not Fit', '✕ غير متوافق')}</span>`
+                    ) : ''}
+                  </div>
+
+                  <!-- Part Type & Name -->
+                  <div class="text-xs text-orange-500 font-semibold">${getPartTypeLabel(part.partType)}</div>
+                  <h3 class="font-bold text-base text-[var(--foreground)] mt-0.5">${t(part.nameEn, part.nameAr)}</h3>
+
+                  <!-- Buy Box Winner + Store Pickup Info -->
+                  <div class="mt-3 p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-xs font-semibold text-[var(--muted-foreground)]">${t('Best Offer:', 'أفضل عرض:')}</span>
+                      ${conditionBadge(bestOffer.condition)}
+                    </div>
+                    <div class="flex items-baseline justify-between">
+                      <div>
+                        <div class="text-xs font-semibold text-[var(--foreground)]">${t(bestOffer.brandEn, bestOffer.brandAr)} (${t(bestOffer.originEn, bestOffer.originAr)})</div>
+                        <div class="text-xs text-[var(--muted-foreground)]">${t('Trader:', 'التاجر:')} <strong class="text-[var(--foreground)]">${t(bestOffer.traderEn, bestOffer.traderAr)}</strong> ⭐ ${bestOffer.rating}</div>
+                      </div>
+                      <div class="text-end">
+                        <div class="text-lg font-extrabold text-orange-500">${bestOffer.price.toLocaleString()} <span class="text-xs font-normal">EGP</span></div>
+                        <div class="text-xs text-[var(--muted-foreground)]">${t('Stock:', 'المخزون:')} ${bestOffer.stock}</div>
+                      </div>
+                    </div>
+
+                    ${bestOffer.allowStorePickup ? `
+                      <div class="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs">
+                        <span class="font-semibold text-emerald-500">🏪 ${t(`Store Pickup Ready in ${bestOffer.pickupReadyMins}m`, `استلام من المحل خلال ${bestOffer.pickupReadyMins} د`)}</span>
+                        <span class="text-[var(--muted-foreground)] truncate max-w-[170px]">${t(bestOffer.storeAddressEn, bestOffer.storeAddressAr)}</span>
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+
+                <!-- Actions: Direct Store Pickup OR Add to Cart OR Compare Traders -->
+                <div class="mt-4 pt-3 border-t border-[var(--border)] space-y-2">
+                  <div class="grid grid-cols-2 gap-2">
+                    <button onclick="addToCart('${part.id}', '${bestOffer.id}', 'STORE_PICKUP')" class="py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+                      🏪 ${t('Pick Up at Store', 'استلام من المحل')}
+                    </button>
+                    <button onclick="addToCart('${part.id}', '${bestOffer.id}', 'HOME')" class="py-2 px-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition">
+                      🚚 ${t('Ship / Deliver', 'شحن وتوصيل')}
+                    </button>
+                  </div>
+                  <button onclick="openOffersModal('${part.id}')" class="w-full py-1.5 px-3 rounded-xl border border-orange-500/40 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-xs font-bold transition">
+                    ${t(`Compare ${part.offers.length} Trader Offers (OEM / Aftermarket / Used)`, `قارن عروض ${part.offers.length} تجار (أصلي / بديل / استيراد)`)}
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function renderTraderStockPage() {
+      const validCount = state.csvVerifiedRows.filter(r => r.isValid && r.selected).length;
+      const invalidCount = state.csvVerifiedRows.filter(r => !r.isValid).length;
+
+      return `
+        <div class="space-y-5">
+          <!-- Header Banner -->
+          <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-500/15 text-orange-500">
+                ${t('Trader Stock & Inventory Portal — El-Tawfikia Auto Parts', 'بوابة إدارة مخزون التاجر — التوفيقية لقطع غيار السيارات')}
+              </span>
+              <h2 class="text-base font-bold text-[var(--foreground)] mt-1">
+                ${t('Add New Spare Parts Manually or Bulk Upload via CSV with Smart Verification', 'أضف قطع الغيار يدوياً أو ارفع ملف CSV ليتم فحصه والتحقق منه وإضافته تلقائياً')}
+              </h2>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="px-3.5 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs">
+                <span class="text-[var(--muted-foreground)]">${t('Total Active SKUs:', 'إجمالي القطع بالمخزون:')}</span>
+                <strong class="text-orange-500 ms-1 text-sm">${state.parts.length}</strong>
+              </div>
+            </div>
+          </div>
+
+          ${state.csvAutoAddSuccessBanner ? `
+            <div class="p-4 rounded-2xl bg-emerald-500/15 border-2 border-emerald-500 text-emerald-500 flex flex-wrap items-center justify-between gap-3">
+              <div class="text-xs font-bold">${state.csvAutoAddSuccessBanner}</div>
+              <button onclick="setActiveTab('storefront')" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">
+                ${t('→ View Newly Added Parts in Customer Storefront', '← شاهد القطع المضافة الآن في متجر العملاء')}
+              </button>
+            </div>
+          ` : ''}
+
+          <div class="grid ${state.deviceMode === 'mobile' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-5">
+            <!-- Left Column (7 cols): CSV Bulk Upload, Read & Verify Wizard -->
+            <div class="lg:col-span-7 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--border)]">
+                <div>
+                  <h3 class="text-base font-bold text-[var(--foreground)]">
+                    📄 ${t('Option 1: Upload CSV Stock File (Read → Verify → Confirm Auto-Add)', 'الخيار 1: رفع ملف مخزون CSV (قراءة ← فحص وتحقق ← موافقة وإضافة تلقائية)')}
+                  </h3>
+                  <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+                    ${t('Upload a .csv file from your computer or test with our pre-loaded sample trader CSV below.', 'ارفع ملف CSV من جهازك أو جرب ملف التاجر التجريبي الجاهز بالأسفل.')}
+                  </p>
+                </div>
+              </div>
+
+              <!-- File Picker + Sample Loader -->
+              <div class="flex flex-wrap items-center gap-2.5">
+                <label class="px-3.5 py-2 rounded-xl border border-orange-500/50 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-xs font-bold cursor-pointer transition">
+                  📂 ${t('Choose .CSV File from Computer', 'اختر ملف CSV من جهازك')}
+                  <input type="file" accept=".csv,text/csv" onchange="handleCsvFileUpload(event)" class="hidden" />
+                </label>
+                <button onclick="loadSampleCsvAndVerify()" class="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition shadow-sm">
+                  ⚡ ${t('Read & Verify CSV Stock Now', 'قراءة وفحص ملف الـ CSV الآن')}
+                </button>
+              </div>
+
+              <!-- Editable CSV Content Box -->
+              <div>
+                <label class="block text-xs font-semibold text-[var(--muted-foreground)] mb-1">
+                  ${t('CSV File Content (Editable — includes 6 valid parts across different types + 1 faulty row to demonstrate verification):', 'محتوى ملف الـ CSV (قابل للتعديل — يحتوي على 6 قطع سليمة بمختلف الأنواع + سطر بدون سعر لاختبار الفحص):')}
+                </label>
+                <textarea
+                  id="csv-textarea"
+                  rows="5"
+                  oninput="state.csvRawText = this.value"
+                  class="w-full p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] font-mono text-xs text-[var(--foreground)]"
+                >${state.csvRawText}</textarea>
+              </div>
+
+              <!-- Verification Preview Table (Appears after Read & Verify) -->
+              ${state.csvHasParsed ? `
+                <div class="p-4 rounded-2xl bg-[var(--background)] border-2 border-orange-500/40 space-y-3">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span class="text-xs font-bold uppercase text-orange-500">${t('Step 2: Automated Verification Report', 'الخطوة 2: تقرير الفحص والتحقق التلقائي للبيانات')}</span>
+                      <h4 class="text-sm font-bold text-[var(--foreground)]">
+                        ${t(`We read ${state.csvVerifiedRows.length} rows: ${validCount} Verified & Ready, ${invalidCount} Flagged with Errors`, `تم قراءة ${state.csvVerifiedRows.length} سطور: ${validCount} قطع سليمة وجاهزة، ${invalidCount} سطور بها أخطاء`)}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-start border-collapse text-xs">
+                      <thead>
+                        <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)]">
+                          <th class="py-2 px-2 text-start">${t('Include', 'إضافة')}</th>
+                          <th class="py-2 px-2 text-start">OE#</th>
+                          <th class="py-2 px-2 text-start">${t('Part Name & Type', 'اسم ونوع القطعة')}</th>
+                          <th class="py-2 px-2 text-start">${t('Condition & Brand', 'الحالة والماركة')}</th>
+                          <th class="py-2 px-2 text-start">${t('Price / Qty', 'السعر / الكمية')}</th>
+                          <th class="py-2 px-2 text-start">${t('Verification Status', 'حالة الفحص')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${state.csvVerifiedRows.map((r, idx) => `
+                          <tr class="border-b border-[var(--border)] ${r.isValid ? '' : 'opacity-60'}">
+                            <td class="py-2 px-2">
+                              <input type="checkbox" ${r.selected ? 'checked' : ''} ${r.isValid ? '' : 'disabled'} onchange="toggleCsvRowSelection(${idx}, this.checked)" />
+                            </td>
+                            <td class="py-2 px-2 font-mono font-bold">${r.oeNumber}</td>
+                            <td class="py-2 px-2">
+                              <div class="font-bold text-[var(--foreground)]">${t(r.nameEn, r.nameAr)}</div>
+                              <div class="text-orange-500">${getPartTypeLabel(r.partType)}</div>
+                            </td>
+                            <td class="py-2 px-2">
+                              <div>${r.brand} (${r.origin})</div>
+                              <div class="mt-0.5">${conditionBadge(r.condition)}</div>
+                            </td>
+                            <td class="py-2 px-2 font-bold">
+                              ${r.price > 0 ? `${r.price.toLocaleString()} EGP` : '<span class="text-red-500">0 EGP</span>'}
+                              <div class="text-[var(--muted-foreground)] font-normal">${t('Qty:', 'الكمية:')} ${r.stockQty}</div>
+                            </td>
+                            <td class="py-2 px-2">
+                              ${r.isValid
+                                ? `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">✓ ${t(r.statusEn, r.statusAr)}</span>`
+                                : `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/15 text-red-500 border border-red-500/30">⚠ ${t(r.statusEn, r.statusAr)}</span>`
+                              }
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Trader Confirmation Prompt ("Say Yes and Auto-Added") -->
+                  <div class="pt-3 border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+                    <div class="text-xs font-semibold text-[var(--foreground)]">
+                      ${t(`Do you approve adding these ${validCount} verified spare parts to your live store inventory?`, `هل توافق على إضافة هذه الـ ${validCount} قطع التي تم التحقق منها إلى مخزون محلك مباشرة؟`)}
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button onclick="confirmAndAutoAddCsvStock()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm">
+                        ✓ ${t(`Yes, Confirm & Auto-Add ${validCount} Verified Parts`, `نعم، موافق وأضف الـ ${validCount} قطع للمخزون تلقائياً`)}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Right Column (5 cols): Manual Single Part Stock Entry Form -->
+            <div class="lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-3.5">
+              <div class="pb-3 border-b border-[var(--border)]">
+                <h3 class="text-base font-bold text-[var(--foreground)]">
+                  ➕ ${t('Option 2: Add Single Spare Part Manually', 'الخيار 2: إضافة قطعة غيار منفردة يدوياً')}
+                </h3>
+                <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+                  ${t('Specify the Spare Part Type, Condition Tier, OE Number, Price, and In-Store Pickup option.', 'حدد نوع القطعة، الحالة، الرقم الأصلي، السعر، وإتاحة الاستلام من المحل.')}
+                </p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-xs font-semibold mb-1">${t('OE Part Number', 'رقم القطعة الأصلي OE')}</label>
+                  <input id="man-oe" type="text" value="16100-09460" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-mono" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1">${t('Spare Part Type', 'نوع وتصنيف القطعة')}</label>
+                  <select id="man-type" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs">
+                    ${PART_TYPES.filter(x => x.id !== 'ALL').map(pt => `
+                      <option value="${pt.id}">${pt.icon} ${t(pt.en, pt.ar)}</option>
+                    `).join('')}
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-xs font-semibold mb-1">${t('Part Name (English)', 'اسم القطعة (إنجليزي)')}</label>
+                  <input id="man-name-en" type="text" value="Engine Water Pump Assembly" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1">${t('Part Name (Arabic)', 'اسم القطعة (عربي)')}</label>
+                  <input id="man-name-ar" type="text" value="طرمبة مياه تبريد محرك كاملة" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-xs font-semibold mb-1">${t('Condition Tier', 'حالة ودرجة القطعة')}</label>
+                  <select id="man-cond" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs">
+                    ${PART_CONDITIONS.filter(x => x.id !== 'ALL').map(c => `
+                      <option value="${c.id}">${t(c.en, c.ar)}</option>
+                    `).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1">${t('Brand & Origin', 'الماركة وبلد المنشأ')}</label>
+                  <input id="man-brand" type="text" value="Aisin Japan" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label class="block text-xs font-semibold mb-1">${t('Price (EGP)', 'السعر (ج.م)')}</label>
+                  <input id="man-price" type="number" value="2250" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-bold" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1">${t('Stock Qty', 'الكمية المتاحة')}</label>
+                  <input id="man-qty" type="number" value="9" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1">${t('Store Pickup?', 'استلام من المحل؟')}</label>
+                  <select id="man-pickup" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs">
+                    <option value="YES">🏪 ${t('Yes (30m)', 'نعم (30 د)')}</option>
+                    <option value="NO">🚚 ${t('Delivery Only', 'شحن فقط')}</option>
+                  </select>
+                </div>
+              </div>
+
+              <button onclick="addManualStockItem()" class="w-full py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition shadow-sm">
+                ➕ ${t('Add Part to Live Store Inventory', 'إضافة القطعة لمخزون المحل الآن')}
+              </button>
+            </div>
+          </div>
+
+          <!-- Current Trader Inventory Table -->
+          <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+            <h3 class="text-base font-bold text-[var(--foreground)] mb-3">
+              📦 ${t(`Live Trader Inventory (${state.parts.length} Master Parts Listed)`, `جدول المخزون الحي للتاجر (${state.parts.length} قطع معروضة حالياً)`)}
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-start border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)]">
+                    <th class="py-2 px-2 text-start">OE#</th>
+                    <th class="py-2 px-2 text-start">${t('Part Name', 'اسم القطعة')}</th>
+                    <th class="py-2 px-2 text-start">${t('Spare Part Type', 'نوع القطعة')}</th>
+                    <th class="py-2 px-2 text-start">${t('Condition', 'الحالة')}</th>
+                    <th class="py-2 px-2 text-start">${t('Price', 'السعر')}</th>
+                    <th class="py-2 px-2 text-start">${t('Stock', 'الرصيد')}</th>
+                    <th class="py-2 px-2 text-start">${t('Fulfillment', 'طريقة التسليم')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${state.parts.map(p => {
+                    const o = p.offers[0];
+                    return `
+                      <tr class="border-b border-[var(--border)]">
+                        <td class="py-2.5 px-2 font-mono font-bold">
+                          ${p.oeNumber}
+                          ${p.isFromCsv ? `<span class="ms-1 px-1.5 py-0.5 rounded bg-emerald-500 text-white text-xs">CSV</span>` : ''}
+                        </td>
+                        <td class="py-2.5 px-2 font-bold text-[var(--foreground)]">${t(p.nameEn, p.nameAr)}</td>
+                        <td class="py-2.5 px-2 text-orange-500 font-semibold">${getPartTypeLabel(p.partType)}</td>
+                        <td class="py-2.5 px-2">${conditionBadge(o.condition)}</td>
+                        <td class="py-2.5 px-2 font-extrabold text-orange-500">${o.price.toLocaleString()} EGP</td>
+                        <td class="py-2.5 px-2 font-semibold">${o.stock}</td>
+                        <td class="py-2.5 px-2">
+                          ${o.allowStorePickup
+                            ? `<span class="text-emerald-500 font-semibold">🏪 ${t('Store Pickup + Delivery', 'استلام من المحل + شحن')}</span>`
+                            : `<span>🚚 ${t('Delivery Only', 'شحن فقط')}</span>`
+                          }
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRFQScreen() {
+      return `
+        <div class="grid ${state.deviceMode === 'mobile' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-5">
+          <div class="lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-500/15 text-orange-500">
+              ${t('US-C03: Request a Part (RFQ)', 'طلب تسعير قطعة خاصة')}
+            </span>
+            <h2 class="text-base font-bold text-[var(--foreground)] mt-2">
+              ${t("Can't find a rare part? Get quotes with Store Pickup or Delivery!", 'مش لاقي القطعة؟ اطلب تسعير فوري واستلم من المحل أو بالشحن!')}
+            </h2>
+            <div class="space-y-3 mt-4">
+              <div>
+                <label class="block text-xs font-semibold mb-1">${t('Vehicle Details', 'السيارة والموديل')}</label>
+                <input id="rfq-vehicle" type="text" value="${t('2022 Toyota Corolla 1.6L', 'تويوتا كورولا 2022 - 1600 سي سي')}" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">${t('Required Spare Part Name', 'اسم القطعة المطلوبة')}</label>
+                <input id="rfq-partname" type="text" placeholder="${t('e.g. Right Side Mirror with Blind Spot Sensor', 'مثال: مراية جنب يمين ضم بالغمزات')}" class="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs" />
+              </div>
+              <button onclick="submitNewRFQ()" class="w-full py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition shadow-sm">
+                🚀 ${t('Broadcast RFQ to Specialized Traders', 'إرسال طلب التسعير للتجار المتخصصين')}
+              </button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 space-y-4">
+            ${state.rfqs.map(rfq => `
+              <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--border)]">
+                  <div>
+                    <span class="text-xs font-mono font-bold text-orange-500">${rfq.id} • VIN: ${rfq.vin}</span>
+                    <h3 class="text-base font-bold text-[var(--foreground)]">${t(rfq.partNameEn, rfq.partNameAr)}</h3>
+                    <p class="text-xs text-[var(--muted-foreground)]">${t(rfq.vehicleEn, rfq.vehicleAr)}</p>
+                  </div>
+                  <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                    ${rfq.quotes.length} ${t('Trader Quotes', 'عروض أسعار')}
+                  </span>
+                </div>
+                <div class="space-y-3 mt-4">
+                  ${rfq.quotes.map(q => `
+                    <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+                      <div class="space-y-1 max-w-md">
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-xs text-[var(--foreground)]">${t(q.traderEn, q.traderAr)}</span>
+                          ${conditionBadge(q.condition)}
+                        </div>
+                        <div class="text-xs font-semibold text-[var(--foreground)]">${q.brand}</div>
+                        <p class="text-xs text-[var(--muted-foreground)]">${t(q.notesEn, q.notesAr)}</p>
+                      </div>
+                      <div class="text-end">
+                        <div class="text-lg font-extrabold text-orange-500">${q.price.toLocaleString()} EGP</div>
+                        <button onclick="acceptRFQQuote('${rfq.id}', '${q.id}')" class="mt-2 px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition">
+                          ${t('Accept Quote', 'قبول العرض')}
+                        </button>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWorkshopsScreen() {
+      return `
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+          <div class="mb-4">
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-500/15 text-orange-500">
+              ${t('US-C04: Verified Partner Service Centers', 'مراكز الصيانة المعتمدة والشحن المباشر للورشة')}
+            </span>
+            <h2 class="text-base font-bold text-[var(--foreground)] mt-1">
+              ${t('Buy the part & ship it directly to a certified mechanic near you', 'اشتري قطعة الغيار واشحنها مباشرة لمركز صيانة معتمد بأسعار مصنعية ثابتة')}
+            </h2>
+          </div>
+
+          <div class="grid ${state.deviceMode === 'mobile' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'} gap-4">
+            ${state.workshops.map(ws => {
+              const isSelected = state.selectedWorkshopId === ws.id;
+              return `
+                <div class="p-4 rounded-2xl border-2 ${isSelected ? 'border-orange-500 bg-orange-500/5' : 'border-[var(--border)] bg-[var(--background)]'} flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 class="font-bold text-base text-[var(--foreground)]">${t(ws.nameEn, ws.nameAr)}</h3>
+                        <p class="text-xs text-[var(--muted-foreground)]">📍 ${t(ws.locationEn, ws.locationAr)}</p>
+                      </div>
+                      <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-500 text-xs font-bold">⭐ ${ws.rating} (${ws.reviews})</span>
+                    </div>
+                    <div class="mt-3 p-3 rounded-xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-between">
+                      <span class="text-xs text-[var(--muted-foreground)]">${t('Standard Part Installation Labor:', 'سعر مصنعية التركيب الثابت:')}</span>
+                      <span class="text-sm font-extrabold text-orange-500">${ws.installFee} EGP</span>
+                    </div>
+                  </div>
+                  <button onclick="selectWorkshopForCheckout('${ws.id}')" class="mt-4 w-full py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition">
+                    ${t('Select Workshop for Part Delivery & Install', 'اختر هذا المركز لشحن القطعة والتركيب')}
+                  </button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAdminScreen() {
+      return `
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-4">
+          <h2 class="text-base font-bold text-[var(--foreground)]">
+            ${t('Arabety Marketplace Control Center', 'مركز إدارة منصة عربيتي')}
+          </h2>
+          <div class="grid ${state.deviceMode === 'mobile' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'} gap-4">
+            <div class="p-4 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+              <div class="text-xs text-[var(--muted-foreground)]">${t('Monthly Marketplace GMV', 'إجمالي مبيعات المنصة شهرياً')}</div>
+              <div class="text-xl font-extrabold text-[var(--foreground)] mt-1">2,450,000 EGP</div>
+            </div>
+            <div class="p-4 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+              <div class="text-xs text-[var(--muted-foreground)]">${t('In-Store Pickup Orders Share', 'نسبة طلبات الاستلام المباشر من المحلات')}</div>
+              <div class="text-xl font-extrabold text-emerald-500 mt-1">38% of Orders</div>
+            </div>
+            <div class="p-4 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+              <div class="text-xs text-[var(--muted-foreground)]">${t('Verified CSV Catalog SKUs', 'القطع المضافة عبر نظام فحص CSV')}</div>
+              <div class="text-xl font-extrabold text-orange-500 mt-1">${state.parts.length} Active Master Parts</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // CSV Upload, Parse, Verify & Auto-Add Functions
+    function handleCsvFileUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        state.csvRawText = e.target.result;
+        loadSampleCsvAndVerify();
+      };
+      reader.readAsText(file);
+    }
+
+    function loadSampleCsvAndVerify() {
+      const textarea = document.getElementById('csv-textarea');
+      if (textarea) {
+        state.csvRawText = textarea.value;
+      }
+      const lines = state.csvRawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (lines.length <= 1) return;
+
+      const validPartTypes = PART_TYPES.map(x => x.id);
+      const validConds = PART_CONDITIONS.map(x => x.id);
+
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        const oeNumber = cols[0] || '';
+        const nameEn = cols[1] || 'Unnamed Part';
+        const nameAr = cols[2] || nameEn;
+        const partType = validPartTypes.includes(cols[3]) ? cols[3] : 'MECHANICAL_ENGINE';
+        const condition = validConds.includes(cols[4]) ? cols[4] : 'OEM_NEW';
+        const brand = cols[5] || 'OEM';
+        const origin = cols[6] || 'Japan';
+        const price = Number(cols[7]) || 0;
+        const stockQty = Number(cols[8]) || 0;
+        const warrantyDays = Number(cols[9]) || 30;
+        const allowStorePickup = (cols[10] || 'YES').toUpperCase() === 'YES';
+
+        const existsInCatalog = state.parts.some(p => p.oeNumber.toLowerCase() === oeNumber.toLowerCase());
+        const isValid = Boolean(oeNumber && nameEn && price > 0 && stockQty > 0);
+
+        rows.push({
+          oeNumber,
+          nameEn,
+          nameAr,
+          partType,
+          condition,
+          brand,
+          origin,
+          price,
+          stockQty,
+          warrantyDays,
+          allowStorePickup,
+          isValid,
+          selected: isValid,
+          statusEn: !isValid
+            ? 'Invalid Price or Missing Data (Auto-Skipped)'
+            : existsInCatalog
+              ? 'Matched Existing Catalog OE#'
+              : 'Verified — New Catalog Part',
+          statusAr: !isValid
+            ? 'سعر غير صالح أو بيانات ناقصة (تم استبعاده)'
+            : existsInCatalog
+              ? 'متطابق مع رقم أصلي موجود بالكتالوج'
+              : 'تم التحقق — قطعة جديدة صالحة للإضافة'
+        });
+      }
+
+      state.csvVerifiedRows = rows;
+      state.csvHasParsed = true;
+      state.csvAutoAddSuccessBanner = null;
+      renderAll();
+    }
+
+    function toggleCsvRowSelection(idx, checked) {
+      if (state.csvVerifiedRows[idx]) {
+        state.csvVerifiedRows[idx].selected = checked;
+        renderAll();
+      }
+    }
+
+    function confirmAndAutoAddCsvStock() {
+      const toAdd = state.csvVerifiedRows.filter(r => r.isValid && r.selected);
+      if (toAdd.length === 0) return;
+
+      toAdd.forEach(item => {
+        const existing = state.parts.find(p => p.oeNumber.toLowerCase() === item.oeNumber.toLowerCase());
+        const newOffer = {
+          id: 'o-csv-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+          traderEn: 'El-Tawfikia Auto Parts',
+          traderAr: 'التوفيقية لقطع غيار السيارات',
+          storeAddressEn: 'Downtown Cairo — 14 Orabi St, El-Tawfikia',
+          storeAddressAr: 'وسط البلد — 14 شارع عرابي، التوفيقية',
+          allowStorePickup: item.allowStorePickup,
+          pickupReadyMins: 30,
+          rating: 4.9,
+          condition: item.condition,
+          brandEn: item.brand,
+          brandAr: item.brand,
+          originEn: item.origin,
+          originAr: item.origin,
+          price: item.price,
+          stock: item.stockQty,
+          warrantyDays: item.warrantyDays,
+          shipHours: 12
+        };
+
+        if (existing) {
+          existing.offers.unshift(newOffer);
+          existing.isFromCsv = true;
+        } else {
+          state.parts.unshift({
+            id: 'p-csv-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            oeNumber: item.oeNumber,
+            nameEn: item.nameEn,
+            nameAr: item.nameAr,
+            partType: item.partType,
+            compatibleVehicles: ['v-corolla-22', 'ALL'],
+            isFromCsv: true,
+            offers: [newOffer]
+          });
+        }
+      });
+
+      state.csvHasParsed = false;
+      state.csvAutoAddSuccessBanner = t(
+        `✅ Confirmed! ${toAdd.length} verified spare parts from your CSV were automatically added to your inventory and are now live in the Storefront!`,
+        `✅ تم التأكيد! تمت إضافة ${toAdd.length} قطع غيار من ملف الـ CSV تلقائياً إلى مخزونك وهي متاحة الآن للعملاء في المتجر!`
+      );
+      renderAll();
+    }
+
+    function addManualStockItem() {
+      const oeNumber = document.getElementById('man-oe').value || '16100-09460';
+      const partType = document.getElementById('man-type').value || 'MECHANICAL_ENGINE';
+      const nameEn = document.getElementById('man-name-en').value || 'Engine Water Pump Assembly';
+      const nameAr = document.getElementById('man-name-ar').value || 'طرمبة مياه تبريد محرك كاملة';
+      const condition = document.getElementById('man-cond').value || 'OEM_NEW';
+      const brand = document.getElementById('man-brand').value || 'Aisin Japan';
+      const price = Number(document.getElementById('man-price').value) || 2250;
+      const stock = Number(document.getElementById('man-qty').value) || 5;
+      const allowStorePickup = document.getElementById('man-pickup').value === 'YES';
+
+      state.parts.unshift({
+        id: 'p-man-' + Date.now(),
+        oeNumber,
+        nameEn,
+        nameAr,
+        partType,
+        compatibleVehicles: ['v-corolla-22', 'ALL'],
+        isFromCsv: true,
+        offers: [
+          {
+            id: 'o-man-' + Date.now(),
+            traderEn: 'El-Tawfikia Auto Parts',
+            traderAr: 'التوفيقية لقطع غيار السيارات',
+            storeAddressEn: 'Downtown Cairo — 14 Orabi St, El-Tawfikia',
+            storeAddressAr: 'وسط البلد — 14 شارع عرابي، التوفيقية',
+            allowStorePickup,
+            pickupReadyMins: 30,
+            rating: 4.9,
+            condition,
+            brandEn: brand,
+            brandAr: brand,
+            originEn: 'Japan',
+            originAr: 'اليابان',
+            price,
+            stock,
+            warrantyDays: 90,
+            shipHours: 12
+          }
+        ]
+      });
+
+      state.csvAutoAddSuccessBanner = t(
+        `✅ "${nameEn}" (OE# ${oeNumber}) has been added to your live inventory!`,
+        `✅ تمت إضافة "${nameAr}" (OE# ${oeNumber}) إلى مخزونك الحي بنجاح!`
+      );
+      renderAll();
+    }
+
+    function changeGarageVehicle(val) {
+      state.selectedVehicleId = val;
+      renderAll();
+    }
+
+    function setPartTypeFilter(typeId) {
+      state.partTypeFilter = typeId;
+      renderAll();
+    }
+
+    function toggleOnlyStorePickup() {
+      state.onlyStorePickup = !state.onlyStorePickup;
+      renderAll();
+    }
+
+    function updateSearch(val) {
+      state.searchQuery = val;
+      renderAll();
+    }
+
+    function setConditionFilter(cond) {
+      state.conditionFilter = cond;
+      renderAll();
+    }
+
+    function openOffersModal(partId) {
+      const part = state.parts.find(p => p.id === partId);
+      if (!part) return;
+      document.getElementById('modal-part-oe').textContent = `OE# ${part.oeNumber} • ${getPartTypeLabel(part.partType)}`;
+      document.getElementById('modal-part-title').textContent = t(part.nameEn, part.nameAr);
+
+      const listEl = document.getElementById('modal-offers-list');
+      listEl.innerHTML = part.offers.map((o, idx) => `
+        <div class="p-4 rounded-xl bg-[var(--background)] border ${idx === 0 ? 'border-orange-500' : 'border-[var(--border)]'} flex flex-wrap items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-[var(--foreground)]">${t(o.traderEn, o.traderAr)}</span>
+              <span class="text-xs text-amber-500 font-semibold">⭐ ${o.rating}</span>
+              ${conditionBadge(o.condition)}
+            </div>
+            <div class="text-xs font-semibold text-[var(--foreground)]">
+              ${t(o.brandEn, o.brandAr)} — ${t('Origin:', 'المنشأ:')} ${t(o.originEn, o.originAr)}
+            </div>
+            ${o.allowStorePickup ? `
+              <div class="text-xs text-emerald-500 font-semibold">
+                🏪 ${t(`Direct Store Pickup Ready in ${o.pickupReadyMins} mins:`, `متاح استلام مباشر من المحل خلال ${o.pickupReadyMins} د:`)} ${t(o.storeAddressEn, o.storeAddressAr)}
+              </div>
+            ` : ''}
+          </div>
+          <div class="text-end space-y-1.5">
+            <div class="text-lg font-extrabold text-orange-500">${o.price.toLocaleString()} EGP</div>
+            <div class="flex gap-1.5">
+              ${o.allowStorePickup ? `
+                <button onclick="addToCart('${part.id}', '${o.id}', 'STORE_PICKUP'); closeOffersModal();" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+                  🏪 ${t('Pick Up at Store', 'استلام من المحل')}
+                </button>
+              ` : ''}
+              <button onclick="addToCart('${part.id}', '${o.id}', 'HOME'); closeOffersModal();" class="px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition">
+                🚚 ${t('Deliver', 'شحن')}
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('offers-modal').classList.remove('hidden');
+    }
+
+    function closeOffersModal() {
+      document.getElementById('offers-modal').classList.add('hidden');
+    }
+
+    function addToCart(partId, offerId, preferredMode) {
+      const part = state.parts.find(p => p.id === partId);
+      if (!part) return;
+      const offer = part.offers.find(o => o.id === offerId) || part.offers[0];
+      state.cart.push({
+        partId: part.id,
+        partNameEn: part.nameEn,
+        partNameAr: part.nameAr,
+        oeNumber: part.oeNumber,
+        traderNameEn: offer.traderEn,
+        traderNameAr: offer.traderAr,
+        storeAddressEn: offer.storeAddressEn || 'Downtown Cairo — El-Tawfikia',
+        storeAddressAr: offer.storeAddressAr || 'وسط البلد — التوفيقية',
+        allowStorePickup: offer.allowStorePickup !== false,
+        pickupReadyMins: offer.pickupReadyMins || 30,
+        condition: offer.condition,
+        brand: t(offer.brandEn, offer.brandAr),
+        price: offer.price,
+        qty: 1
+      });
+      if (preferredMode) {
+        state.deliveryMode = preferredMode;
+      }
+      state.orderSuccessData = null;
+      renderAll();
+      toggleCartModal(true);
+    }
+
+    function submitNewRFQ() {
+      const veh = document.getElementById('rfq-vehicle').value || '2022 Toyota Corolla';
+      const partName = document.getElementById('rfq-partname').value || 'Front Bumper Reinforcement Bar';
+
+      state.rfqs.unshift({
+        id: 'RFQ-' + Math.floor(8900 + Math.random() * 900),
+        vehicleEn: veh,
+        vehicleAr: veh,
+        vin: 'JTDBR32E800192831',
+        partNameEn: partName,
+        partNameAr: partName,
+        status: 'QUOTED',
+        quotes: [
+          {
+            id: 'q-auto-' + Date.now(),
+            traderEn: 'El-Tawfikia Auto Parts',
+            traderAr: 'التوفيقية لقطع غيار السيارات',
+            condition: 'AFTERMARKET_COMMERCIAL',
+            brand: 'Certified Taiwan Grade-1',
+            price: 2400,
+            warrantyDays: 60,
+            notesEn: 'Ready for immediate In-Store Pickup at our El-Tawfikia shop or same-day courier.',
+            notesAr: 'جاهز للاستلام الفوري من محلنا بالتوفيقية أو الشحن السريع.'
+          }
+        ]
+      });
+      renderAll();
+    }
+
+    function acceptRFQQuote(rfqId, quoteId) {
+      const rfq = state.rfqs.find(r => r.id === rfqId);
+      if (!rfq) return;
+      const q = rfq.quotes.find(x => x.id === quoteId);
+      if (!q) return;
+      state.cart.push({
+        partId: rfq.id,
+        partNameEn: rfq.partNameEn,
+        partNameAr: rfq.partNameAr,
+        oeNumber: 'RFQ-CUSTOM',
+        traderNameEn: q.traderEn,
+        traderNameAr: q.traderAr,
+        storeAddressEn: 'Downtown Cairo — 14 Orabi St, El-Tawfikia',
+        storeAddressAr: 'وسط البلد — 14 شارع عرابي، التوفيقية',
+        allowStorePickup: true,
+        pickupReadyMins: 30,
+        condition: q.condition,
+        brand: q.brand,
+        price: q.price,
+        qty: 1
+      });
+      renderAll();
+      toggleCartModal(true);
+    }
+
+    function selectWorkshopForCheckout(wsId) {
+      state.selectedWorkshopId = wsId;
+      state.deliveryMode = 'WORKSHOP';
+      renderAll();
+      toggleCartModal(true);
+    }
+
+    function toggleCartModal(open) {
+      const modal = document.getElementById('cart-modal');
+      if (!open) {
+        modal.classList.add('hidden');
+        return;
+      }
+      renderCartModalBody();
+      modal.classList.remove('hidden');
+    }
+
+    function setDeliveryMode(mode) {
+      state.deliveryMode = mode;
+      renderCartModalBody();
+    }
+
+    function removeCartIdx(idx) {
+      state.cart.splice(idx, 1);
+      renderAll();
+      renderCartModalBody();
+    }
+
+    function completeCheckout() {
+      const pickupCode = 'PK-' + Math.floor(1000 + Math.random() * 9000);
+      const firstItem = state.cart[0] || {};
+      state.orderSuccessData = {
+        mode: state.deliveryMode,
+        orderNo: 'ARB-' + Math.floor(90000 + Math.random() * 9000),
+        pickupCode,
+        traderName: t(firstItem.traderNameEn || 'El-Tawfikia Auto Parts', firstItem.traderNameAr || 'التوفيقية لقطع الغيار'),
+        storeAddress: t(firstItem.storeAddressEn || 'Downtown Cairo — 14 Orabi St', firstItem.storeAddressAr || 'وسط البلد — 14 شارع عرابي، التوفيقية')
+      };
+      state.cart = [];
+      renderAll();
+      renderCartModalBody();
+    }
+
+    function renderCartModalBody() {
+      document.getElementById('cart-modal-title').textContent = t('Checkout: Direct Store Pickup, Home Delivery, or Workshop Install', 'إتمام الطلب: استلام مباشر من المحل أو توصيل للمنزل أو لمركز الصيانة');
+      const body = document.getElementById('cart-modal-body');
+
+      if (state.orderSuccessData) {
+        const d = state.orderSuccessData;
+        body.innerHTML = `
+          <div class="p-4 rounded-2xl bg-emerald-500/15 border-2 border-emerald-500 space-y-2 text-xs">
+            <div class="text-sm font-extrabold text-emerald-500">
+              🎉 ${t(`Order #${d.orderNo} Confirmed!`, `تم تأكيد الطلب #${d.orderNo} بنجاح!`)}
+            </div>
+            ${d.mode === 'STORE_PICKUP' ? `
+              <div class="p-3 rounded-xl bg-[var(--card)] border border-[var(--border)] space-y-1">
+                <div class="font-bold text-[var(--foreground)]">🏪 ${t('Direct Store Pickup Pass (Ready in 30 mins):', 'كود الاستلام المباشر من محل التاجر (جاهز خلال 30 دقيقة):')}</div>
+                <div class="text-lg font-mono font-extrabold text-orange-500">${d.pickupCode}</div>
+                <div class="text-[var(--muted-foreground)]">📍 ${t('Pickup Store:', 'عنوان المحل:')} <strong>${d.traderName} — ${d.storeAddress}</strong></div>
+                <div class="text-[var(--muted-foreground)]">${t('Show this code to the trader to inspect & collect your spare part with 0 EGP shipping.', 'أظهر هذا الكود للتاجر لمعاينة واستلام القطعة مباشرة بدون مصاريف شحن.')}</div>
+              </div>
+            ` : `
+              <div class="text-[var(--foreground)] font-semibold">
+                ${t('Your sub-orders have been dispatched and protected by Arabety Fitment Escrow.', 'تم إرسال طلبك للتاجر وهو محمي بضمان التوافق من عربيتي.')}
+              </div>
+            `}
+          </div>
+        `;
+        return;
+      }
+
+      if (state.cart.length === 0) {
+        body.innerHTML = `<div class="text-xs text-[var(--muted-foreground)] py-6 text-center">${t('Your cart is empty.', 'سلة المشتريات فارغة.')}</div>`;
+        return;
+      }
+
+      const subtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
+      const shipping = state.deliveryMode === 'STORE_PICKUP' ? 0 : 85;
+      const ws = state.workshops.find(w => w.id === state.selectedWorkshopId) || state.workshops[0];
+      const installFee = state.deliveryMode === 'WORKSHOP' ? ws.installFee : 0;
+      const total = subtotal + shipping + installFee;
+
+      body.innerHTML = `
+        <div class="space-y-2.5">
+          ${state.cart.map((item, idx) => `
+            <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold text-[var(--foreground)]">${t(item.partNameEn, item.partNameAr)}</div>
+                <div class="text-xs text-[var(--muted-foreground)]">
+                  ${t('Trader:', 'التاجر:')} <strong>${t(item.traderNameEn, item.traderNameAr)}</strong> • ${item.brand}
+                </div>
+                <div class="text-xs text-emerald-500">
+                  📍 ${t(item.storeAddressEn, item.storeAddressAr)}
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-extrabold text-orange-500">${item.price.toLocaleString()} EGP</span>
+                <button onclick="removeCartIdx(${idx})" class="text-xs text-red-500 font-bold">✕</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- 3-Way Fulfillment Switcher -->
+        <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2.5">
+          <div class="text-xs font-bold text-[var(--foreground)]">${t('Choose How You Want to Receive Your Spare Parts (3 Options):', 'اختر طريقة استلام قطع الغيار (3 خيارات متاحة):')}</div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <button onclick="setDeliveryMode('STORE_PICKUP')" class="p-2.5 rounded-xl border text-start text-xs transition ${
+              state.deliveryMode === 'STORE_PICKUP' ? 'border-emerald-500 bg-emerald-500/10 font-bold' : 'border-[var(--border)]'
+            }">
+              <div>🏪 ${t('Pick Up from Trader Store', 'استلام مباشر من محل التاجر')}</div>
+              <div class="text-emerald-500 font-semibold mt-0.5">${t('FREE (0 EGP) • Ready 30m', 'مجاناً (0 ج.م) • جاهز خلال 30 د')}</div>
+            </button>
+            <button onclick="setDeliveryMode('HOME')" class="p-2.5 rounded-xl border text-start text-xs transition ${
+              state.deliveryMode === 'HOME' ? 'border-orange-500 bg-orange-500/10 font-bold' : 'border-[var(--border)]'
+            }">
+              <div>🏠 ${t('Deliver to Home Address', 'توصيل للمنزل')}</div>
+              <div class="text-[var(--muted-foreground)] mt-0.5">${t('+85 EGP Fast Courier', '+85 ج.م شحن سريع')}</div>
+            </button>
+            <button onclick="setDeliveryMode('WORKSHOP')" class="p-2.5 rounded-xl border text-start text-xs transition ${
+              state.deliveryMode === 'WORKSHOP' ? 'border-orange-500 bg-orange-500/10 font-bold' : 'border-[var(--border)]'
+            }">
+              <div>🔧 ${t('Ship to Workshop + Install', 'شحن لمركز صيانة + تركيب')}</div>
+              <div class="text-[var(--muted-foreground)] mt-0.5">${t(`+${ws.installFee} EGP Labor`, `+${ws.installFee} ج.م مصنعية`)}</div>
+            </button>
+          </div>
+
+          ${state.deliveryMode === 'STORE_PICKUP' ? `
+            <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-500 font-semibold">
+              ✓ ${t('Direct Store Pickup Selected: Your part is reserved at the trader counter. You will receive an instant Pickup Code to collect it directly from:', 'تم اختيار الاستلام المباشر من المحل: سيتم حجز القطعة باسمك وإصدار كود استلام فوري من عنوان التاجر:')}
+              <strong class="block text-[var(--foreground)] mt-0.5">📍 ${t(state.cart[0].storeAddressEn, state.cart[0].storeAddressAr)}</strong>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Summary -->
+        <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-1.5 text-xs">
+          <div class="flex justify-between"><span>${t('Parts Subtotal:', 'إجمالي قطع الغيار:')}</span><strong>${subtotal.toLocaleString()} EGP</strong></div>
+          <div class="flex justify-between">
+            <span>${t('Shipping / Pickup Fee:', 'رسوم الشحن أو الاستلام من المحل:')}</span>
+            <strong class="${shipping === 0 ? 'text-emerald-500' : ''}">${shipping === 0 ? t('0 EGP (Free Store Pickup)', '0 ج.م (استلام مباشر من المحل)') : `${shipping} EGP`}</strong>
+          </div>
+          ${installFee > 0 ? `<div class="flex justify-between text-emerald-500"><span>${t('Workshop Installation Fee:', 'مصنعية التركيب في المركز:')}</span><strong>+${installFee} EGP</strong></div>` : ''}
+          <div class="flex justify-between pt-2 border-t border-[var(--border)] text-sm font-extrabold text-orange-500">
+            <span>${t('Total Amount:', 'الإجمالي النهائي:')}</span>
+            <span>${total.toLocaleString()} EGP</span>
+          </div>
+        </div>
+
+        <button onclick="completeCheckout()" class="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition shadow-sm">
+          ${state.deliveryMode === 'STORE_PICKUP'
+            ? t('✓ Confirm Reservation & Get Store Pickup Code', '✓ تأكيد الحجز وإصدار كود الاستلام من محل التاجر')
+            : t('✓ Confirm Order & Reserve Fitment Guarantee', '✓ تأكيد الطلب وتفعيل ضمان التوافق')}
+        </button>
+      `;
+    }
+
+    function renderAll() {
+      renderNavTabs();
+      const container = document.getElementById('screen-container');
+      if (state.activeTab === 'storefront') container.innerHTML = renderStorefront();
+      else if (state.activeTab === 'trader-stock') container.innerHTML = renderTraderStockPage();
+      else if (state.activeTab === 'rfq') container.innerHTML = renderRFQScreen();
+      else if (state.activeTab === 'workshops') container.innerHTML = renderWorkshopsScreen();
+      else if (state.activeTab === 'admin') container.innerHTML = renderAdminScreen();
+    }
+
+    // Parse initial CSV on load so the verification table is ready to inspect immediately
+    loadSampleCsvAndVerify();
+  </script>
+</body>
+</html>
