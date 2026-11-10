@@ -36,14 +36,40 @@ interface CartItem {
 }
 
 export default function ArabetyMarketplace({
-  defaultTab = "storefront",
+  defaultTab = "auth",
 }: {
-  defaultTab?: "storefront" | "trader-stock" | "rfq" | "workshops" | "admin";
+  defaultTab?: "auth" | "garage-onboarding" | "storefront" | "trader-stock" | "rfq" | "workshops" | "admin";
 }) {
   const [locale, setLocale] = useState<Locale>("ar");
   const [activeTab, setActiveTab] = useState<
-    "storefront" | "trader-stock" | "rfq" | "workshops" | "admin"
+    "auth" | "garage-onboarding" | "storefront" | "trader-stock" | "rfq" | "workshops" | "admin"
   >(defaultTab);
+
+  // Auth & User Session State (Step 1: Login / Sign-Up + OTP + Role Selection)
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authStep, setAuthStep] = useState<"credentials" | "otp">("credentials");
+  const [selectedRole, setSelectedRole] = useState<"CUSTOMER" | "TRADER" | "WORKSHOP" | "ADMIN">("CUSTOMER");
+  const [authPhone, setAuthPhone] = useState<string>("01012345678");
+  const [authName, setAuthName] = useState<string>("أحمد الشرقاوي / Ahmed El-Sherkawy");
+  const [authShopName, setAuthShopName] = useState<string>("التوفيقية لقطع غيار السيارات / El-Tawfikia Auto Parts");
+  const [authShopAddress, setAuthShopAddress] = useState<string>("وسط البلد — 14 شارع عرابي، التوفيقية");
+  const [otpCode, setOtpCode] = useState<string>("1234");
+  const [currentUser, setCurrentUser] = useState<{
+    name: string;
+    phone: string;
+    role: "CUSTOMER" | "TRADER" | "WORKSHOP" | "ADMIN";
+    shopName?: string;
+  } | null>(
+    defaultTab === "trader-stock"
+      ? {
+          name: "الحاج محمود التوفيقية / Mahmoud El-Tawfikia",
+          phone: "01098765432",
+          role: "TRADER",
+          shopName: "El-Tawfikia Auto Parts",
+        }
+      : null
+  );
+  const [vinInput, setVinInput] = useState<string>("JTDBR32E800129481");
 
   // Catalog & Fitment State
   const [parts, setParts] = useState<MasterPart[]>(INITIAL_PARTS);
@@ -391,19 +417,47 @@ export default function ArabetyMarketplace({
               <div className="flex items-center gap-2">
                 <h1 className="font-bold text-lg text-slate-900">Arabety | عربيتي</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
-                  {t("Store Pickup + CSV Auto-Verify", "استلام من المحل + فحص CSV تلقائي")}
+                  {t(
+                    "Full Flow: Login / Sign-Up → Garage → Shop / CSV Stock → Checkout → Pickup",
+                    "مسار متكامل: تسجيل الدخول ← الجراج ← المتجر ومخزون CSV ← الدفع والاستلام"
+                  )}
                 </span>
               </div>
               <p className="text-xs text-slate-500">
                 {t(
-                  "Multi-Trader Spare Parts Marketplace • 7 Part Types • Direct Store Pickup",
-                  "سوق قطع غيار السيارات متعدد التجار • 7 أنواع قطع غيار • استلام مباشر من المحل"
+                  "Multi-Trader Spare Parts Marketplace • Complete End-to-End Flow",
+                  "سوق قطع غيار السيارات متعدد التجار • مسار كامل من تسجيل الدخول حتى الاستلام"
                 )}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {currentUser ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs">
+                <span className="font-bold text-emerald-700">
+                  ● {currentUser.name} ({currentUser.role})
+                </span>
+                <button
+                  onClick={() => {
+                    setCurrentUser(null);
+                    setAuthStep("credentials");
+                    setActiveTab("auth");
+                  }}
+                  className="px-2 py-0.5 rounded-lg bg-red-50 text-red-600 font-bold hover:bg-red-100"
+                >
+                  {t("Logout", "خروج")}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setActiveTab("auth")}
+                className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 text-xs font-bold"
+              >
+                🔐 {t("Step 1: Login / Sign-Up", "الخطوة 1: تسجيل الدخول / حساب جديد")}
+              </button>
+            )}
+
             <Link
               href="/trader/stock"
               className="px-3.5 py-2 rounded-xl border border-orange-500/40 bg-orange-50 text-orange-700 text-xs font-bold hover:bg-orange-100 transition"
@@ -431,34 +485,51 @@ export default function ArabetyMarketplace({
           </div>
         </div>
 
-        {/* Role & Screen Tabs */}
+        {/* End-to-End 7-Step Flow Bar */}
         <div className="max-w-7xl mx-auto px-4 pb-3 flex flex-wrap gap-2">
           {[
             {
+              id: "auth",
+              label: t(
+                "1. 🔐 Login / Sign-Up & OTP",
+                "1. 🔐 تسجيل الدخول / حساب جديد"
+              ),
+            },
+            {
+              id: "garage-onboarding",
+              label: t(
+                "2. 🚗 My Garage Setup",
+                "2. 🚗 إعداد سيارتي بالجراج"
+              ),
+            },
+            {
               id: "storefront",
               label: t(
-                "1. Storefront, 7 Part Types & Store Pickup",
-                "1. المتجر و7 أنواع قطع والاستلام من المحل"
+                "3. 🛒 Storefront & 7 Part Types",
+                "3. 🛒 المتجر و7 أنواع قطع الغيار"
               ),
             },
             {
               id: "trader-stock",
               label: t(
-                "2. Trader Stock Page & CSV Verify/Auto-Add",
-                "2. صفحة مخزون التاجر ورفع وفحص ملف CSV"
+                "4. 📄 Trader Stock & CSV Auto-Verify",
+                "4. 📄 مخزون التاجر وفحص CSV"
               ),
             },
             {
               id: "rfq",
-              label: t("3. Request a Part (RFQ Quotes)", "3. طلب تسعير قطعة خاصة (RFQ)"),
+              label: t("5. 📸 Request a Part (RFQ)", "5. 📸 طلب تسعير قطعة (RFQ)"),
             },
             {
               id: "workshops",
-              label: t("4. Verified Workshops", "4. مراكز الصيانة والتركيب"),
+              label: t("6. 🔧 Verified Workshops", "6. 🔧 مراكز الصيانة والتركيب"),
             },
             {
               id: "admin",
-              label: t("5. Admin & Orders Ledger", "5. لوحة الإدارة وسجل الطلبات"),
+              label: t(
+                "7. 📦 My Orders & Pickup Pass",
+                "7. 📦 طلباتي وكود الاستلام"
+              ),
             },
           ].map((tab) => (
             <button
@@ -483,7 +554,407 @@ export default function ArabetyMarketplace({
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* TAB 1: CUSTOMER STOREFRONT */}
+        {/* STEP 1: LOGIN / SIGN-UP + OTP + ROLE SELECTION */}
+        {activeTab === "auth" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div className="lg:col-span-7 bg-white border-2 border-orange-500/40 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                    {t(
+                      "Step 1 of 7 — Account Authentication & Role Selection",
+                      "الخطوة 1 من 7 — تسجيل الدخول أو إنشاء حساب جديد وتحديد نوع الحساب"
+                    )}
+                  </span>
+                  <h2 className="text-lg font-extrabold mt-1.5">
+                    {t("Welcome to Arabety (عربيتي)", "مرحباً بك في منصة عربيتي (Arabety)")}
+                  </h2>
+                </div>
+                <div className="inline-flex rounded-xl border border-slate-200 p-1 bg-slate-50">
+                  <button
+                    onClick={() => {
+                      setAuthMode("login");
+                      setAuthStep("credentials");
+                    }}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold ${
+                      authMode === "login"
+                        ? "bg-orange-600 text-white"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    {t("Login", "تسجيل دخول")}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAuthMode("signup");
+                      setAuthStep("credentials");
+                    }}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold ${
+                      authMode === "signup"
+                        ? "bg-orange-600 text-white"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    {t("Create Account (Sign Up)", "إنشاء حساب جديد")}
+                  </button>
+                </div>
+              </div>
+
+              {/* Account Role Selector */}
+              <div>
+                <label className="block text-xs font-bold mb-2">
+                  {t("1. Select Your Account Role:", "1. اختر نوع الحساب:")}
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    {
+                      id: "CUSTOMER",
+                      icon: "🚗",
+                      en: "Car Owner",
+                      ar: "مالك سيارة (عميل)",
+                    },
+                    {
+                      id: "TRADER",
+                      icon: "🏪",
+                      en: "Spare Parts Trader",
+                      ar: "تاجر قطع غيار",
+                    },
+                    {
+                      id: "WORKSHOP",
+                      icon: "🔧",
+                      en: "Partner Workshop",
+                      ar: "مركز صيانة وتركيب",
+                    },
+                    {
+                      id: "ADMIN",
+                      icon: "🛡️",
+                      en: "Platform Admin",
+                      ar: "إدارة المنصة",
+                    },
+                  ].map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => setSelectedRole(r.id as any)}
+                      className={`p-3 rounded-xl border text-start transition ${
+                        selectedRole === r.id
+                          ? "border-orange-600 bg-orange-50 font-bold"
+                          : "border-slate-200 bg-slate-50"
+                      }`}
+                    >
+                      <div className="text-base">{r.icon}</div>
+                      <div className="text-xs font-bold mt-1">{t(r.en, r.ar)}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {authStep === "credentials" ? (
+                <div className="space-y-3 pt-2">
+                  {authMode === "signup" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold mb-1">
+                          {t("Full Name", "الاسم بالكامل")}
+                        </label>
+                        <input
+                          type="text"
+                          value={authName}
+                          onChange={(e) => setAuthName(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs"
+                        />
+                      </div>
+                      {selectedRole === "TRADER" && (
+                        <div>
+                          <label className="block text-xs font-semibold mb-1">
+                            {t("Store / Shop Name", "اسم محل أو شركة قطع الغيار")}
+                          </label>
+                          <input
+                            type="text"
+                            value={authShopName}
+                            onChange={(e) => setAuthShopName(e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {authMode === "signup" && selectedRole === "TRADER" && (
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">
+                        {t(
+                          "Store Pickup Address",
+                          "عنوان المحل للاستلام المباشر من التاجر"
+                        )}
+                      </label>
+                      <input
+                        type="text"
+                        value={authShopAddress}
+                        onChange={(e) => setAuthShopAddress(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">
+                      {t("Egyptian Mobile Number (+20)", "رقم الموبايل المصري (+20)")}
+                    </label>
+                    <input
+                      type="tel"
+                      value={authPhone}
+                      onChange={(e) => setAuthPhone(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => setAuthStep("otp")}
+                    className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-sm transition"
+                  >
+                    📲{" "}
+                    {authMode === "signup"
+                      ? t(
+                          "Send Verification Code (OTP) & Create Account →",
+                          "إرسال كود التحقق (OTP) وإنشاء الحساب ←"
+                        )
+                      : t(
+                          "Send Login OTP Code via SMS / WhatsApp →",
+                          "إرسال كود الدخول السريع عبر رسالة / واتساب ←"
+                        )}
+                  </button>
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-500 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-700">
+                      📲{" "}
+                      {t(
+                        `OTP Verification Code Sent to ${authPhone}`,
+                        `تم إرسال كود التفعيل المكون من 4 أرقام إلى ${authPhone}`
+                      )}
+                    </span>
+                    <button
+                      onClick={() => setAuthStep("credentials")}
+                      className="text-xs underline text-slate-500"
+                    >
+                      {t("Edit Phone", "تعديل الرقم")}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      maxLength={4}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      className="w-40 px-4 py-2.5 rounded-xl border-2 border-emerald-500 text-center font-mono text-lg font-extrabold tracking-widest bg-white"
+                    />
+                    <span className="text-xs text-slate-600">
+                      {t("(Demo OTP pre-filled: 1234)", "(كود التجربة جاهز: 1234)")}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCurrentUser({
+                        name: authName,
+                        phone: authPhone,
+                        role: selectedRole,
+                        shopName:
+                          selectedRole === "TRADER" ? authShopName : undefined,
+                      });
+                      setAuthStep("credentials");
+                      if (selectedRole === "TRADER") {
+                        setActiveTab("trader-stock");
+                        if (verifiedRows.length === 0) {
+                          runCsvVerification(csvRawText);
+                        }
+                      } else {
+                        setActiveTab("garage-onboarding");
+                      }
+                    }}
+                    className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition"
+                  >
+                    ✓{" "}
+                    {t(
+                      "Verify OTP & Continue to Step 2 →",
+                      "تأكيد الكود والانتقال للخطوة التالية ←"
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: 1-Click Quick Demo Login Cards */}
+            <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold">
+                ⚡{" "}
+                {t(
+                  "Quick 1-Click Demo Login (Jump into Any Role)",
+                  "دخول تجريبي سريع بضغطة واحدة (اختر الشخصية)"
+                )}
+              </h3>
+              <button
+                onClick={() => {
+                  setCurrentUser({
+                    name: "أحمد الشرقاوي / Ahmed El-Sherkawy",
+                    phone: "01012345678",
+                    role: "CUSTOMER",
+                  });
+                  setActiveTab("garage-onboarding");
+                }}
+                className="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:border-orange-500 text-start transition flex items-center justify-between"
+              >
+                <div>
+                  <div className="text-xs font-bold">
+                    🚗{" "}
+                    {t(
+                      "Login as Car Owner (Ahmed El-Sherkawy)",
+                      "دخول كعميل مالك سيارة (أحمد الشرقاوي)"
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    {t(
+                      "Next: Step 2 Setup Garage → Browse Parts → Checkout & Pickup Pass",
+                      "التالي: إعداد السيارة بالجراج ← تصفح القطع ← الشراء وكود الاستلام"
+                    )}
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-lg bg-orange-600 text-white text-xs font-bold">
+                  →
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setCurrentUser({
+                    name: "الحاج محمود التوفيقية / Mahmoud El-Tawfikia",
+                    phone: "01098765432",
+                    role: "TRADER",
+                    shopName: "El-Tawfikia Auto Parts",
+                  });
+                  setActiveTab("trader-stock");
+                  if (verifiedRows.length === 0) {
+                    runCsvVerification(csvRawText);
+                  }
+                }}
+                className="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:border-emerald-500 text-start transition flex items-center justify-between"
+              >
+                <div>
+                  <div className="text-xs font-bold">
+                    🏪{" "}
+                    {t(
+                      "Login as Spare Parts Trader (El-Tawfikia Auto Parts)",
+                      "دخول كتاجر قطع غيار (التوفيقية لقطع غيار السيارات)"
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    {t(
+                      "Next: Upload & Auto-Verify CSV Stock → Confirm → Hand Over Store Pickup",
+                      "التالي: رفع وفحص ملف مخزون CSV ← إضافة للمتجر ← تسليم العملاء بالمحل"
+                    )}
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold">
+                  →
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: MY GARAGE VEHICLE SETUP */}
+        {activeTab === "garage-onboarding" && (
+          <div className="bg-white border-2 border-orange-500/40 rounded-2xl p-6 shadow-sm space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                  {t(
+                    "Step 2 of 7 — My Garage Vehicle Onboarding & VIN Fitment Setup",
+                    "الخطوة 2 من 7 — تسجيل سيارتك في الجراج لضمان تطابق قطع الغيار 100%"
+                  )}
+                </span>
+                <h2 className="text-lg font-extrabold mt-1.5">
+                  🚗{" "}
+                  {t(
+                    "Select Your Car to Unlock 100% Fitment Guarantee",
+                    "اختر سيارتك لتفعيل ضمان التوافق 100% على كل القطع"
+                  )}
+                </h2>
+              </div>
+              <button
+                onClick={() => setActiveTab("storefront")}
+                className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-sm transition"
+              >
+                {t(
+                  "Save Vehicle & Browse Spare Parts (Step 3) →",
+                  "حفظ السيارة وتصفح قطع الغيار المطابقة (الخطوة 3) ←"
+                )}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {VEHICLES.map((v) => {
+                const active = selectedVehicleId === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => setSelectedVehicleId(v.id)}
+                    className={`p-4 rounded-2xl border-2 text-start transition ${
+                      active
+                        ? "border-orange-600 bg-orange-50 shadow-sm"
+                        : "border-slate-200 bg-slate-50 hover:border-orange-400"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg">🚘</span>
+                      {active && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-600 text-white">
+                          ✓ {t("Active", "مختارة")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-bold text-sm mt-2">
+                      {isAr ? `${v.makeAr} ${v.modelAr}` : `${v.make} ${v.model}`}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {v.yearStart}–{v.yearEnd} • {v.engine}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1 flex-1 min-w-[240px]">
+                <label className="block text-xs font-bold">
+                  🔎{" "}
+                  {t(
+                    "Optional: Enter 17-Digit Chassis / VIN Number for Exact OE Matching",
+                    "اختياري: أدخل رقم الشاسيه (VIN المكون من 17 رمزاً) لمطابقة الرقم الأصلي OE"
+                  )}
+                </label>
+                <input
+                  type="text"
+                  value={vinInput}
+                  onChange={(e) => setVinInput(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 font-mono text-xs font-bold uppercase bg-white"
+                />
+              </div>
+              <button
+                onClick={() => setActiveTab("storefront")}
+                className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition"
+              >
+                ✓{" "}
+                {t(
+                  "Confirm Car & Go to Storefront (Step 3) →",
+                  "تأكيد السيارة والانتقال للمتجر (الخطوة 3) ←"
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: CUSTOMER STOREFRONT */}
         {activeTab === "storefront" && (
           <>
             {/* My Garage + Direct Store Pickup Filter Bar */}
